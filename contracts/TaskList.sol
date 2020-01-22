@@ -6,12 +6,13 @@ contract TaskList {
     enum STATUS {NONE, OPEN, EXECUTING, REVIEW, REJECT, DONE}
     
     struct Task {
-        string infourl;
-        uint timestamp;
+        string infourl; // wiki link to the task details
+        uint timestamp; //timestamp of the last status update
         STATUS status;
-        uint expiry;
-        address taskowner;
-        address delegate;
+        uint expiry; // must finish before the expiry
+        uint stakereq; // stake requirement
+        address taskowner;  // owner of this task
+        address delegate;  // taker of the task;
         string resulturl;
         uint prize;
     }
@@ -19,21 +20,41 @@ contract TaskList {
     enum ROLE {NONE, TASKOWNER, SERVICE, ADMIN}
 
     address owner;
-    mapping (address => ROLE) rolelist;
     mapping (address => Task) public tasklist;
+    mapping (address => bool) taskownerlist;
+    mapping (address => bool) servicelist;
+    mapping (address => bool) adminlist;
 
     constructor() public {
         owner = msg.sender;
     }
 
-    function addRole (address entity, ROLE _role) public {
+    function transferOwner (address newOwner) public {
         if (msg.sender == owner) {
-            rolelist[entity] = _role;
+            owner = newOwner;
+        }
+    }
+    
+    function addTaskOwner (address entity) public {
+        if (msg.sender == owner || adminlist[msg.sender]) {
+            taskownerlist[entity] = true;
+        }
+    }
+    
+    function addService (address entity) public {
+        if (msg.sender == owner || adminlist[msg.sender]) {
+            servicelist[entity] = true;
+        }
+    }
+    
+    function addAdmin (address entity) public {
+        if (msg.sender == owner) {
+            servicelist[entity] = true;
         }
     }
     /// add a new task to the list
     function addTask (string memory infourl, uint expiry, uint prize) public returns (bool)  {
-        if (rolelist[msg.sender] != ROLE.TASKOWNER) {
+        if (taskownerlist[msg.sender] == false) {
             return false;
         }
         Task storage task = tasklist[msg.sender];
@@ -50,7 +71,9 @@ contract TaskList {
     
     /// take the task
     function takeTask (address taskowner) public returns (bool)  {
-        if (rolelist[msg.sender] != ROLE.SERVICE) return false;
+        if (servicelist[msg.sender] == false) {
+            return false;
+        }
         Task storage task = tasklist[taskowner];
         if (task.status == STATUS.OPEN) {
             task.timestamp = block.timestamp;
@@ -63,7 +86,9 @@ contract TaskList {
     
     /// put the task to review
     function finshTask (address taskowner, string memory resulturl) public returns (bool)  {
-        if (rolelist[msg.sender] != ROLE.SERVICE) return false;
+        if (servicelist[msg.sender] == false) {
+            return false;
+        }
         Task storage task = tasklist[taskowner];
         if (task.delegate == msg.sender && (task.status == STATUS.EXECUTING || task.status == STATUS.REJECT)) {
             task.resulturl = resulturl;
@@ -75,7 +100,7 @@ contract TaskList {
     
     /// review verdict
     function reviewTask(bool verdict) public returns (bool)  {
-        if (rolelist[msg.sender] != ROLE.TASKOWNER) return false;
+        if (taskownerlist[msg.sender] == false) return false;
         Task storage task = tasklist[msg.sender];
         if (task.status == STATUS.REVIEW) {
             if (verdict == true) {
@@ -88,9 +113,4 @@ contract TaskList {
         }
         return false;
     }
-    
-    function getRole (address ad) view public returns (ROLE) {
-        if (msg.sender == owner) return rolelist[ad];
-    }
-    
 }
