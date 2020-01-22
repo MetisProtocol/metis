@@ -49,7 +49,7 @@ contract TaskList {
     
     function addAdmin (address entity) public {
         if (msg.sender == owner) {
-            servicelist[entity] = true;
+            adminlist[entity] = true;
         }
     }
     /// add a new task to the list
