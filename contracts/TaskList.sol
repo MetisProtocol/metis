@@ -20,10 +20,12 @@ contract TaskList {
     enum ROLE {NONE, TASKOWNER, SERVICE, ADMIN}
 
     address owner;
-    mapping (address => Task) public tasklist;
+    mapping (address => Task[]) public tasklist;
     mapping (address => bool) taskownerlist;
     mapping (address => bool) servicelist;
     mapping (address => bool) adminlist;
+    
+    address[] public taskaddresses;
 
     constructor() public {
         owner = msg.sender;
@@ -53,29 +55,48 @@ contract TaskList {
         }
     }
     /// add a new task to the list
-    function addTask (string memory infourl, uint expiry, uint prize) public returns (bool)  {
+    function addTask (string memory infourl, uint expiry, uint prize, address delegate) public returns (int) {
         if (taskownerlist[msg.sender] == false) {
-            return false;
+            return -1;
         }
-        Task storage task = tasklist[msg.sender];
-        if (task.status == STATUS.NONE || task.status == STATUS.DONE) {
-            task.infourl = infourl;
-            task.timestamp = block.timestamp;
-            task.expiry = expiry;
-            task.prize = prize;
-            task.status = STATUS.OPEN;
-            return true;
+        Task[] storage tasks = tasklist[msg.sender];
+        uint index = 0;
+        
+        for (index = 0; index < tasks.length; index++) {
+            if (tasks[index].status == STATUS.DONE) break;
         }
-        return false;
+        
+        Task memory task;
+        
+        task.infourl = infourl;
+        task.timestamp = block.timestamp;
+        task.expiry = expiry;
+        task.prize = prize;
+        task.taskowner = msg.sender;
+        task.delegate = delegate;
+        task.status = STATUS.OPEN;
+        if (index == tasks.length) {
+            // 5 concurrent jobs per address only
+            if (index == 5) return -2;
+            if (index == 0) {
+                // new owner
+                taskaddresses.push(msg.sender);
+            }
+            tasks.push(task);   
+        } else {
+            tasks[index] = task;
+        }
+        return int(index);
     }
     
     /// take the task
-    function takeTask (address taskowner) public returns (bool)  {
+    function takeTask (address taskowner, uint index) public returns (bool)  {
         if (servicelist[msg.sender] == false) {
             return false;
         }
-        Task storage task = tasklist[taskowner];
-        if (task.status == STATUS.OPEN) {
+        if (index >= tasklist[taskowner].length) return false;
+        Task storage task = tasklist[taskowner][index];
+        if (task.status == STATUS.OPEN && (task.delegate == address(0) || task.delegate == msg.sender)) {
             task.timestamp = block.timestamp;
             task.delegate = msg.sender;
             task.status = STATUS.EXECUTING;
@@ -85,11 +106,12 @@ contract TaskList {
     }
     
     /// put the task to review
-    function finshTask (address taskowner, string memory resulturl) public returns (bool)  {
+    function finshTask (address taskowner, uint index, string memory resulturl) public returns (bool)  {
         if (servicelist[msg.sender] == false) {
             return false;
         }
-        Task storage task = tasklist[taskowner];
+        if (index >= tasklist[taskowner].length) return false;
+        Task storage task = tasklist[taskowner][index];
         if (task.delegate == msg.sender && (task.status == STATUS.EXECUTING || task.status == STATUS.REJECT)) {
             task.resulturl = resulturl;
             task.status = STATUS.REVIEW;
@@ -99,9 +121,10 @@ contract TaskList {
     }
     
     /// review verdict
-    function reviewTask(bool verdict) public returns (bool)  {
+    function reviewTask(uint index, bool verdict) public returns (bool)  {
         if (taskownerlist[msg.sender] == false) return false;
-        Task storage task = tasklist[msg.sender];
+        if (index >= tasklist[msg.sender].length) return false;
+        Task storage task = tasklist[msg.sender][index];
         if (task.status == STATUS.REVIEW) {
             if (verdict == true) {
                 task.status = STATUS.DONE;
@@ -112,5 +135,13 @@ contract TaskList {
             return true;
         }
         return false;
+    }
+    
+    function getNumTaskLists() public view returns (uint) {
+        return taskaddresses.length;
+    }
+    
+    function getNumTaskByAddress(address taskowner) public view returns (uint) {
+        return tasklist[taskowner].length;
     }
 }
