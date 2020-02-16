@@ -1,0 +1,25 @@
+{
+  "name": "metis",
+  "version": "1.0.0",
+  "description": "metis project",
+  "main": "index.js",
+  "dependencies": {
+    "@openzeppelin/contracts": "^2.5.0"
+  },
+  "devDependencies": {
+    "@openzeppelin/cli": "^2.7.1"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bossyuansu/metis.git"
+  },
+  "author": "Yuan Su",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/bossyuansu/metis/issues"
+  },
+  "homepage": "https://github.com/bossyuansu/metis#readme"
+}

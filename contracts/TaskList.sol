@@ -55,6 +55,7 @@ contract TaskList {
         }
     }
     /// add a new task to the list
+    /// pass address(0) in delegate to open the task for all
     function addTask (string memory infourl, uint expiry, uint prize, address delegate) public returns (int) {
         if (taskownerlist[msg.sender] == false) {
             return -1;
