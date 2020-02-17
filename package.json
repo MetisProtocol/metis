@@ -6,6 +6,7 @@
   "dependencies": {
     "@openzeppelin/contract-loader": "^0.6.1",
     "@openzeppelin/contracts": "^2.5.0",
+    "bignumber": "^1.1.0",
     "truffle": "^5.1.13",
     "truffle-debugger": "^5.0.26",
     "web3": "^1.2.6",
@@ -15,7 +16,8 @@
     "@openzeppelin/cli": "^2.7.1",
     "@openzeppelin/test-helpers": "^0.5.4",
     "ganache-cli": "^6.9.1",
-    "husky": "^4.2.3"
+    "husky": "^4.2.3",
+    "truffle-hdwallet-provider": "^1.0.17"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
