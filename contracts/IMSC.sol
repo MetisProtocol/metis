@@ -39,15 +39,14 @@ interface IMSC {
    
     /**
      * @dev signal a participant wants to exit
-     * @param check a flag to indicate whether the call is just to check the exit status
      * once an exit is signaled, the contract will wait pledgePeriod * 1 days for other participants to react
      * if other participants also signal exits, the contract will change the status to complete and allow withdraws
      * the other participants can choose to dispute, which blocks the withdraws until the dispute is resolved
      * if no dispute is resolved after the pledge period expires, the contract will automatically set to complete
      * and open to withdraws.
-     * if check is true, the call may still cause status update if the pledge period expires
+     * if exit is already signaled, the call may still cause status update if the pledge period expires
      */
-    function iwantout(bool check) external;
+    function iwantout() external;
 
     /** 
      * @dev raise a dispute
@@ -56,6 +55,7 @@ interface IMSC {
      */
     function dispute() external;
 
+    /**                                                                                                                                                                                                                                                                                          * @dev request a facilitator to resolve the dispute                                                                                                                                                                                                                                         */                                                                                                                                                                                                                                                                                         function resolutionRequest() external;
     /** 
      * @dev cancel a dispute
      * the method also reset the status change. the original dispute period continues.
@@ -70,6 +70,6 @@ interface IMSC {
      * The total amount of values cannot exceed the total funds pledged. The contract status will set to Completed,
      * allowing withdraws.
      */
-    function resolveDispute(uint[] calldata participants, uint[] calldata values) external;
+    function resolveDispute(address[] calldata participants, uint256[] calldata values) external;
 
 }

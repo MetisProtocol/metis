@@ -11,5 +11,5 @@ module.exports = async function(deployer, network, accounts) {
   }
   await deployer.deploy(MIS, '1000000000000000', [],[],[]);
   const token = await MIS.deployed();
-  await deployer.deploy(MSC, [accounts[1], accounts[2]], [accounts[0]], 1, token.address, 10);
+  await deployer.deploy(MSC, [accounts[1], accounts[2]], accounts[0], 1, token.address, 10000);
 };

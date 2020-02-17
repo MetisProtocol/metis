@@ -10,13 +10,17 @@ import "./IMSC.sol";
  * @dev implementation of MSC
  */
 contract MSC is IERC777Recipient, IERC777Sender{
+    IERC1820Registry private _erc1820 = IERC1820Registry(0x1820a4B7618BdE71Dce8cdc73aAB6C95905faD24);
+    bytes32 constant private TOKENS_RECIPIENT_INTERFACE_HASH = keccak256("ERC777TokensRecipient");
+
     using Roles for Roles.Role;
-    enum ContractStatus { Pending, Effective, Completed, Dispute, Closed }
+    enum ContractStatus { Pending, Effective, Completed, Dispute, Requested, Closed }
     enum ParticipantStatus { Pending,Committed, Wantout, Completed, Dispute, Closed }
 
     event Transaction (address operator, address from, address to, uint256 amount, bytes msg1, bytes msg2);
     event ContractClose(address initiator, uint lastStatusChange, uint numWantedout, bytes msg);
     event ContractDispute(address operator, uint lastStatusChange, bytes msg);
+    event ResolutionRequested(address initiator, uint lastStatusChange);
     event DisputeResolution(address facilitator, uint lastStatusChange, address[] participants, uint[] values);
     
     struct Pledge {
@@ -25,7 +29,6 @@ contract MSC is IERC777Recipient, IERC777Sender{
     }
 
     Roles.Role private _participants;
-    Roles.Role private _facilitators;
     address private _tokenAddr; //token contract address
     IERC777 private _token;
     uint private lastStatusChange;
@@ -35,24 +38,24 @@ contract MSC is IERC777Recipient, IERC777Sender{
     uint256 public pledgeAmount;
     uint public disputePeriod;
     address public disputeInitiator;
+    address payable public facilitator;
 
     ContractStatus public contractStatus;
 
-    mapping(address => Pledge) parties;
+    mapping(address => Pledge) public parties;
     address[] public participantsArray;
-    address[] public facilitatorsArray; 
 
     /**
      * @dev participants cannot be empty
      * @param participants list of participants
-     * @param facilitators list of facilitators, who can resolve disputes
+     * @param facilitator_param address of the facilitator, who can resolve disputes. must be payable
      * @param period period in days of time one can raise disputes after a participant requests the exit
      * @param tokenAddr token contract address
      * @param amount amount of pledge requred
      */
     constructor(
 	    address[] memory participants,
-	    address[] memory facilitators,
+	    address payable facilitator_param,
         uint period,
         address tokenAddr,
         uint256 amount
@@ -60,33 +63,25 @@ contract MSC is IERC777Recipient, IERC777Sender{
     public
     {
         participantsArray = participants;
-        facilitatorsArray = facilitators;
         for (uint256 i = 0; i < participants.length; ++i) {
 	        _participants.add(participants[i]);
         }
-	    for (uint256 i = 0; i < facilitators.length; ++i) {
-	        _facilitators.add(facilitators[i]);
-	    }
+	    facilitator = facilitator_param;
         _tokenAddr = tokenAddr;
         _token = IERC777(tokenAddr);
         pledgeAmount = amount;
         disputePeriod = period;
+        _erc1820.setInterfaceImplementer(address(this), TOKENS_RECIPIENT_INTERFACE_HASH, address(this));
     }
 
     /**
      * @dev commit funds to the contract. participants can keep committing after the pledge ammount is reached
      * @param amount amount of fund to commit
+     & @param from the address of sender
      * The sender must authorized this contract to be the operator of senders account before committing
      */
-    function commit(uint256 amount) public {
-
-        Pledge memory p = parties[msg.sender];
-        // Only participants are allowed
-        require(amount > 0, "AMOUNT_NOT_GREATER_THAN_ZERO");
-        require(_participants.has(msg.sender), "DOES_NOT_HAVE_PARTICIPANT_ROLE");
-        require(_token.balanceOf(msg.sender) >= amount, "INSUFFICIENT_BALANCE");
-        require(_token.isOperatorFor(address(this), msg.sender), "NOT_AUTHORIZED_AS_OPERATOR");
-        
+    function _commit(address from, uint256 amount) private {
+        Pledge storage p = parties[from];
         p.value += amount;
         if (p.value >= pledgeAmount && p.status == ParticipantStatus.Pending) {
                 p.status = ParticipantStatus.Committed;
@@ -96,6 +91,22 @@ contract MSC is IERC777Recipient, IERC777Sender{
                 }
         }
         lastStatusChange = now;
+    }
+
+    /**
+     * @dev commit funds to the contract. participants can keep committing after the pledge ammount is reached
+     * @param amount amount of fund to commit
+     * The sender must authorized this contract to be the operator of senders account before committing
+     */
+    function commit(uint256 amount) public {
+
+        // Only participants are allowed
+        require(amount > 0, "AMOUNT_NOT_GREATER_THAN_ZERO");
+        require(_participants.has(msg.sender), "DOES_NOT_HAVE_PARTICIPANT_ROLE");
+        require(_token.balanceOf(msg.sender) >= amount, "INSUFFICIENT_BALANCE");
+        require(_token.isOperatorFor(address(this), msg.sender), "NOT_AUTHORIZED_AS_OPERATOR");
+        
+        // this will trigger tokensToReceive and call _commit
         _token.operatorSend(msg.sender, address(this), amount, "", "Pledge");
     }
 
@@ -108,8 +119,8 @@ contract MSC is IERC777Recipient, IERC777Sender{
      */
     function send(address to, uint256 amount) public {
 
-        Pledge memory p = parties[msg.sender];
-        Pledge memory targetP = parties[to];
+        Pledge storage p = parties[msg.sender];
+        Pledge storage targetP = parties[to];
 
         // Only participants are allowed
         require(amount > 0, "AMOUNT_NOT_GREATER_THAN_ZERO");
@@ -125,57 +136,55 @@ contract MSC is IERC777Recipient, IERC777Sender{
 
     /**
      * @dev withdraw the pledged fund
-     * The sender must have enough fund pledged. Contract will be closed if all funds are withdrawn
+     * The sender must have enough fund pledged. Contract will be closed and selfdestruct if all funds are withdrawn
+     * The facilitator will be paid with the gas free up after selfdestruct
      */
     function withdraw() public {
-        Pledge memory p = parties[msg.sender];
+        Pledge storage p = parties[msg.sender];
         // Only participants are allowed
         require(contractStatus == ContractStatus.Completed, "STATUS_IS_NOT_COMPLETED");
         require(p.value > 0, "AMOUNT_NOT_GREATER_THAN_ZERO");
         require(_participants.has(msg.sender), "DOES_NOT_HAVE_PARTICIPANT_ROLE");
-        require(p.status != ParticipantStatus.Pending, "STATUS_IN_PENDING");
         require(_token.balanceOf(address(this)) >= p.value, "INSUFFICIENT_BALANCE");
         
         p.status = ParticipantStatus.Closed;
-        if (_token.balanceOf(address(this)) == p.value) {
-                contractStatus = ContractStatus.Closed;
-        }
         _token.send(msg.sender,p.value, "Withdraw");
 
         p.value = 0;
         lastStatusChange = now;
+
+        if (_token.balanceOf(address(this)) == 0) {
+                contractStatus = ContractStatus.Closed;
+                selfdestruct(facilitator);
+        }
     }
    
     /**
      * @dev signal a participant wants to exit
-     * @param check a flag to indicate whether the call is just to check the exit status
      * once an exit is signaled, the contract will wait pledgePeriod * 1 days for other participants to react
      * if other participants also signal exits, the contract will change the status to complete and allow withdraws
      * the other participants can choose to dispute, which blocks the withdraws until the dispute is resolved
      * if no dispute is resolved after the pledge period expires, the contract will automatically set to complete
      * and open to withdraws.
-     * if check is true, the call may still cause status update if the pledge period expires
      */
-    function iwantout(bool check) public {
-        Pledge memory p = parties[msg.sender];
+    function iwantout() public {
+        Pledge storage p = parties[msg.sender];
         // Only participants are allowed
         require(_participants.has(msg.sender), "DOES_NOT_HAVE_PARTICIPANT_ROLE");
-        require(check == true || contractStatus == ContractStatus.Effective, "STATUS_IS_NOT_EFFECTIVE");
-        require(check == true || p.status == ParticipantStatus.Committed, "STATUS_NOT_IN_COMMITTED");
+        require(contractStatus == ContractStatus.Effective, "STATUS_IS_NOT_EFFECTIVE");
+        require(p.status == ParticipantStatus.Committed || p.status == ParticipantStatus.Wantout, "STATUS_NOT_IN_COMMITTED_OR_WANTOUT");
         
-        if (check == false) {
+        if (p.status != ParticipantStatus.Wantout) {
                 p.status = ParticipantStatus.Wantout;
                 numWantedout++;
+                lastStatusChange = now;
         }
         if (numWantedout == participantsArray.length) {
                 contractStatus = ContractStatus.Completed;
-                emit ContractClose(msg.sender, lastStatusChange, numWantedout, "All Aggreed");
+                emit ContractClose(msg.sender, lastStatusChange, numWantedout, "All Agreed");
         } else if (now >= lastStatusChange + disputePeriod * 1 days && contractStatus != ContractStatus.Dispute) {
                 contractStatus = ContractStatus.Completed;
                 emit ContractClose(msg.sender, lastStatusChange, numWantedout, "Dispute Expired");
-        }
-        if (check == false) {
-                lastStatusChange = now;
         }
     }
 
@@ -185,7 +194,7 @@ contract MSC is IERC777Recipient, IERC777Sender{
      * further transactions.
      */
     function dispute() public {
-        Pledge memory p = parties[msg.sender];
+        Pledge storage p = parties[msg.sender];
         // Only participants are allowed
         require(_participants.has(msg.sender), "DOES_NOT_HAVE_PARTICIPANT_ROLE");
         require(contractStatus == ContractStatus.Effective, "STATUS_IS_NOT_EFFECTIVE");
@@ -206,7 +215,7 @@ contract MSC is IERC777Recipient, IERC777Sender{
      * the method also reset the status change. the original dispute period continues.
      */
     function withdrawDispute() public {
-        Pledge memory p = parties[msg.sender];
+        Pledge storage p = parties[msg.sender];
         // Only participants are allowed
         require(_participants.has(msg.sender), "DOES_NOT_HAVE_PARTICIPANT_ROLE");
         require(disputeInitiator == msg.sender, "CALLER_DID_NOT_INITIATE_DISPUTE");
@@ -222,21 +231,31 @@ contract MSC is IERC777Recipient, IERC777Sender{
     }
 
     /** 
+     * @dev request a facilitator to resolve the dispute
+     */
+    function resolutionRequest() public {
+        require(_participants.has(msg.sender), "DOES_NOT_HAVE_PARTICIPANT_ROLE");
+        require(contractStatus == ContractStatus.Dispute, "STATUS_IS_NOT_DISPUTE");
+
+        emit ResolutionRequested(msg.sender, lastStatusChange);
+        contractStatus = ContractStatus.Requested;
+    }
+    /** 
      * @dev resolve a dispute
      * @param participants the list of addresses of participants involved in the resolution
      * @param values the list of resolved values after the resolution
-     * Only the facilitator can resolve a dispute.
+     * Only the facilitator can resolve a dispute upon request
      * The total amount of values cannot exceed the total funds pledged. The contract status will set to Completed,
      * allowing withdraws.
      */
-    function resolveDispute(address[] memory participants, uint[] memory values) public {
+    function resolveDispute(address[] memory participants, uint256[] memory values) public {
         // Only participants are allowed
-        require(_facilitators.has(msg.sender), "DOES_NOT_HAVE_FACILITATOR_ROLE");
-        require(contractStatus == ContractStatus.Dispute, "STATUS_IS_NOT_DISPUTE");
+        require(facilitator == msg.sender, "DOES_NOT_HAVE_FACILITATOR_ROLE");
+        require(contractStatus == ContractStatus.Requested, "STATUS_IS_NOT_REQUESTED");
         uint256 totalvalue = 0; 
         contractStatus = ContractStatus.Completed;
         for (uint256 i = 0; i < participants.length; ++i) {
-	        Pledge memory p = parties[participants[i]];
+	        Pledge storage p = parties[participants[i]];
             p.status = ParticipantStatus.Completed;
             p.value = values[i];
             totalvalue += p.value;
@@ -258,7 +277,11 @@ contract MSC is IERC777Recipient, IERC777Sender{
             bytes calldata operatorData
     ) external {
        require(msg.sender == _tokenAddr, "Invalid token");
+       require(_participants.has(from), "SENDER_DOES_NOT_HAVE_PARTICIPANT_ROLE");
+
        emit Transaction(operator, from, to, amount, userData, operatorData); 
+
+       _commit(from, amount);
     }
 
     function tokensToSend (
