@@ -27,6 +27,7 @@ contract MSC is IERC777Recipient, IERC777Sender{
     Roles.Role private _participants;
     Roles.Role private _facilitators;
     address private _tokenAddr; //token contract address
+    IERC777 private _token;
     uint private lastStatusChange;
     uint private disputeRollBackDays;
     uint private numCommitted;
@@ -67,6 +68,7 @@ contract MSC is IERC777Recipient, IERC777Sender{
 	        _facilitators.add(facilitators[i]);
 	    }
         _tokenAddr = tokenAddr;
+        _token = IERC777(tokenAddr);
         pledgeAmount = amount;
         disputePeriod = period;
     }
@@ -78,13 +80,12 @@ contract MSC is IERC777Recipient, IERC777Sender{
      */
     function commit(uint256 amount) public {
 
-        IERC777 erc777 = IERC777(_tokenAddr);
         Pledge memory p = parties[msg.sender];
         // Only participants are allowed
         require(amount > 0, "AMOUNT_NOT_GREATER_THAN_ZERO");
         require(_participants.has(msg.sender), "DOES_NOT_HAVE_PARTICIPANT_ROLE");
-        require(erc777.balanceOf(msg.sender) >= amount, "INSUFFICIENT_BALANCE");
-        require(erc777.isOperatorFor(address(this), msg.sender), "NOT_AUTHORIZED_AS_OPERATOR");
+        require(_token.balanceOf(msg.sender) >= amount, "INSUFFICIENT_BALANCE");
+        require(_token.isOperatorFor(address(this), msg.sender), "NOT_AUTHORIZED_AS_OPERATOR");
         
         p.value += amount;
         if (p.value >= pledgeAmount && p.status == ParticipantStatus.Pending) {
@@ -95,7 +96,7 @@ contract MSC is IERC777Recipient, IERC777Sender{
                 }
         }
         lastStatusChange = now;
-        erc777.operatorSend(msg.sender, address(this), amount, "", "Pledge");
+        _token.operatorSend(msg.sender, address(this), amount, "", "Pledge");
     }
 
     /**
@@ -127,20 +128,19 @@ contract MSC is IERC777Recipient, IERC777Sender{
      * The sender must have enough fund pledged. Contract will be closed if all funds are withdrawn
      */
     function withdraw() public {
-        IERC777 erc777 = IERC777(_tokenAddr);
         Pledge memory p = parties[msg.sender];
         // Only participants are allowed
         require(contractStatus == ContractStatus.Completed, "STATUS_IS_NOT_COMPLETED");
         require(p.value > 0, "AMOUNT_NOT_GREATER_THAN_ZERO");
         require(_participants.has(msg.sender), "DOES_NOT_HAVE_PARTICIPANT_ROLE");
         require(p.status != ParticipantStatus.Pending, "STATUS_IN_PENDING");
-        require(erc777.balanceOf(address(this)) >= p.value, "INSUFFICIENT_BALANCE");
+        require(_token.balanceOf(address(this)) >= p.value, "INSUFFICIENT_BALANCE");
         
         p.status = ParticipantStatus.Closed;
-        if (erc777.balanceOf(address(this)) == p.value) {
+        if (_token.balanceOf(address(this)) == p.value) {
                 contractStatus = ContractStatus.Closed;
         }
-        erc777.send(msg.sender,p.value, "Withdraw");
+        _token.send(msg.sender,p.value, "Withdraw");
 
         p.value = 0;
         lastStatusChange = now;
@@ -241,10 +241,9 @@ contract MSC is IERC777Recipient, IERC777Sender{
             p.value = values[i];
             totalvalue += p.value;
         }
-        IERC777 erc777 = IERC777(_tokenAddr);
 
         // just to make sure the resolution is valid
-        require(erc777.balanceOf(address(this)) >= totalvalue, "INSUFFICIENT_BALANCE");
+        require(_token.balanceOf(address(this)) >= totalvalue, "INSUFFICIENT_BALANCE");
 
         emit DisputeResolution(msg.sender, lastStatusChange, participants, values);
         lastStatusChange = now;
@@ -258,6 +257,7 @@ contract MSC is IERC777Recipient, IERC777Sender{
             bytes calldata userData,
             bytes calldata operatorData
     ) external {
+       require(msg.sender == _tokenAddr, "Invalid token");
        emit Transaction(operator, from, to, amount, userData, operatorData); 
     }
 

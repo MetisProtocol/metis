@@ -17,12 +17,12 @@ contract MetisToken is ERC777 {
        ERC777("MIS Token", "MIS", defaultOperators)
        public
     {
-//        for (uint256 i = 0; i < minters.length; ++i) {
-//	    _minters.add(minters[i]);
- //       }
-//	    for (uint256 i = 0; i < burners.length; ++i) {
-//	        _burners.add(burners[i]);
-//	    }
+        for (uint256 i = 0; i < minters.length; ++i) {
+	    _minters.add(minters[i]);
+        }
+	    for (uint256 i = 0; i < burners.length; ++i) {
+	        _burners.add(burners[i]);
+	    }
         _mint(msg.sender, msg.sender, initialSupply, "", "");
     }
 
