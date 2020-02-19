@@ -13,6 +13,7 @@ interface IMSC {
     event Transaction (address operator, address from, address to, uint256 amount, bytes msg1, bytes msg2);
     event ContractClose(address initiator, uint lastStatusChange, uint numWantedout, bytes msg);
     event ContractDispute(address operator, uint lastStatusChange, bytes msg);
+    event ResolutionRequested(address initiator, uint lastStatusChange);
     event DisputeResolution(address facilitator, uint lastStatusChange, address[] participants, uint[] values);
     
     /**
