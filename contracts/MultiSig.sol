@@ -41,13 +41,15 @@ contract MultiSig is IERC777Recipient, IERC777Sender{
     )
     public
     {
-        participantsArray = participants;
-        for (uint256 i = 0; i < participants.length; ++i) {
-	        _participants.add(participants[i]);
-        }
         _tokenAddr = tokenAddr;
         _token = IERC777(tokenAddr);
         _erc1820.setInterfaceImplementer(address(this), TOKENS_RECIPIENT_INTERFACE_HASH, address(this));
+
+        participantsArray = participants;
+        for (uint256 i = 0; i < participants.length; ++i) {
+	        _participants.add(participants[i]);
+            _token.authorizeOperator(participants[i]);
+        }
     }
 
     /**
@@ -55,10 +57,10 @@ contract MultiSig is IERC777Recipient, IERC777Sender{
      * if all participants submitted the same proposal, the proposal is approved. the token transfer will be executed
      * send a proposal with a different amount will override the previous one and reset the approvals
      */
-    function _propose(address from, address to, uint256 amount, bytes memory usermsg) private {
+    function _propose(address operator, address to, uint256 amount, bytes memory usermsg) private {
         Proposal storage p = proposals[to];
         // Only participants are allowed
-        require(_participants.has(from), "DOES_NOT_HAVE_PARTICIPANT_ROLE");
+        require(_participants.has(operator), "DOES_NOT_HAVE_PARTICIPANT_ROLE");
         require(amount > 0, "AMOUNT_NOT_GREATER_THAN_ZERO");
         require(_token.balanceOf(address(this)) >= amount, "INSUFFICIENT_BALANCE");
 
@@ -68,16 +70,25 @@ contract MultiSig is IERC777Recipient, IERC777Sender{
               // clear the approval
               p.approvals[participantsArray[i]] = false;
            }
-           //clear the rest;
-           p.numApproves = 0;
+           //init the rest;
+           p.numApproves = 1;
+           p.approvals[operator] = true;
            p.value = amount;
-           emit Propose (from, to, amount, "New Proposal", usermsg);
+           emit Propose (operator, to, amount, "New Proposal", usermsg);
         } else {
-                if (p.approvals[from] == false) {
+                if (p.approvals[operator] == false) {
                         p.numApproves++;
-                        emit Propose (from, to, amount, "Approve", usermsg);
+                        p.approvals[operator] = true;
+                        emit Propose (operator, to, amount, "Approve", usermsg);
                 }
         }
+
+        if (p.numApproves == participantsArray.length) {
+                _token.send(to, amount, "Approved Transfer");
+        }
+    }
+    function propose(address to, uint256 amount, bytes memory usermsg) public{
+            _propose(msg.sender, to, amount, usermsg);
     }
    
     function tokensReceived (
@@ -103,9 +114,9 @@ contract MultiSig is IERC777Recipient, IERC777Sender{
     ) external {
        require(_token.balanceOf(address(this)) >= amount, "INSUFFICIENT_BALANCE");
        require(amount > 0, "AMOUNT_IS_ZERO");
+       require(from == address(this), "SOURCE_IS_NOT_MYSELF");
+       require(msg.sender == _tokenAddr, "Invalid token");
        
-       _propose(from, to, amount, userData);
-
        Proposal storage p = proposals[to];
 
        require(p.numApproves == participantsArray.length, "INCOMPLETE_APPROVAL");

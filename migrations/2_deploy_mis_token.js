@@ -1,5 +1,6 @@
 const MIS = artifacts.require("MetisToken");
 const MSC = artifacts.require("MSC");
+const MULTI = artifacts.require("MultiSig");
 require('@openzeppelin/test-helpers/configure')({ provider: web3.currentProvider, environment: 'truffle' });
 
 const { singletons } = require('@openzeppelin/test-helpers');
@@ -17,5 +18,6 @@ module.exports = async function(deployer, network, accounts) {
   if (network === 'development') {
       const token = await MIS.deployed();
       await deployer.deploy(MSC, [accounts[1], accounts[2]], accounts[0], 1, token.address, 10000);
+      await deployer.deploy(MULTI, [accounts[0], accounts[1]], token.address);
   }
 };
