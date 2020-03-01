@@ -7,6 +7,7 @@
     "@openzeppelin/contract-loader": "^0.6.1",
     "@openzeppelin/contracts": "^2.5.0",
     "bignumber": "^1.1.0",
+    "dotenv": "^8.2.0",
     "truffle": "^5.1.13",
     "truffle-debugger": "^5.0.26",
     "web3": "^1.2.6",

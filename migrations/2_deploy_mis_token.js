@@ -14,10 +14,12 @@ module.exports = async function(deployer, network, accounts) {
   const tokenbits = (new BN(10)).pow(18); 
   const amount = (new BN(10000)).multipliedBy(tokenbits); 
 
-  await deployer.deploy(MIS, amount, [accounts[0], accounts[1]],[accounts[0], accounts[1]],[]);
   if (network === 'development') {
+      await deployer.deploy(MIS, amount, [accounts[0], accounts[1]],[accounts[0], accounts[1]],[]);
       const token = await MIS.deployed();
       await deployer.deploy(MSC, [accounts[1], accounts[2]], accounts[0], 1, token.address, 10000);
       await deployer.deploy(MULTI, [accounts[0], accounts[1]], token.address);
+  } else {
+      await deployer.deploy(MIS, amount, [accounts[0]],[accounts[0]],[]);
   }
 };
