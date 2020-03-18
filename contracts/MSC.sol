@@ -43,6 +43,7 @@ contract MSC is IMSC, IERC777Recipient, IERC777Sender{
     ContractStatus public contractStatus;
 
     mapping(address => Pledge) public parties;
+    mapping(address => bool) public withdraworder;
     address[] public participantsArray;
 
     /**
@@ -141,10 +142,8 @@ contract MSC is IMSC, IERC777Recipient, IERC777Sender{
      */
     function withdraw() public {
         Pledge storage p = parties[msg.sender];
-        // Only participants are allowed
         require(contractStatus == ContractStatus.Completed, "STATUS_IS_NOT_COMPLETED");
         require(p.value > 0, "AMOUNT_NOT_GREATER_THAN_ZERO");
-        require(_participants.has(msg.sender), "DOES_NOT_HAVE_PARTICIPANT_ROLE");
         require(_token.balanceOf(address(this)) >= p.value, "INSUFFICIENT_BALANCE");
         
         p.status = ParticipantStatus.Closed;
@@ -152,6 +151,9 @@ contract MSC is IMSC, IERC777Recipient, IERC777Sender{
 
         p.value = 0;
         lastStatusChange = now;
+
+        // indicate withdraw order is initiated. otherwise, the send will be blocked
+        withdraworder[msg.sender] = true;
 
         if (_token.balanceOf(address(this)) == 0) {
                 contractStatus = ContractStatus.Closed;
@@ -292,6 +294,9 @@ contract MSC is IMSC, IERC777Recipient, IERC777Sender{
             bytes calldata userData,
             bytes calldata operatorData
     ) external {
+       // must call withdraw to get the token sent
+       require(withdraworder[to] == true, "WITHDRAW_NOT_INITIATED");
+       withdraworder[to] = false;
        emit Transaction(operator, from, to, amount, userData, operatorData); 
     }
 }
