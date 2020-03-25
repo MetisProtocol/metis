@@ -30,7 +30,7 @@ contract MetisToken is ERC777 {
 	    address[] memory burners,
 	    address[] memory defaultOperators
     )
-       ERC777("MIS Token", "MIS", defaultOperators)
+       ERC777("M Token", "M", defaultOperators)
        public
     {
         for (uint256 i = 0; i < minters.length; ++i) {
