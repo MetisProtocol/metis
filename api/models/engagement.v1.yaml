@@ -1,0 +1,18 @@
+title: engagement
+type: object
+description: describe an engagement
+properties:
+  id:
+    type: string
+  contract:
+    $ref: ./engagementcontract.v1.yaml
+  client:
+    type: string
+  provider:
+    type: string
+  pubkey:
+    type: string
+  stake:
+    type: string
+  payment:
+    type: string

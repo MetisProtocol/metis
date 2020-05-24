@@ -1,0 +1,6 @@
+title: assetdetail
+type: object
+properties:
+  contract:
+    type: string
+    description: the address of the asset smart contract

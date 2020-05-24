@@ -1,0 +1,7 @@
+title: stakecontract
+type: object
+properties:
+  address:
+    type: string
+  timestamp:
+    type: string

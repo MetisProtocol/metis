@@ -1,0 +1,4 @@
+extends: spectral:oas
+rules:
+  # change this rule's severity to info
+  operation-description: info

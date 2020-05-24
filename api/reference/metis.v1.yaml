@@ -1,0 +1,552 @@
+openapi: 3.0.0
+info:
+  title: metis
+  version: '1.0'
+  license:
+    name: MIT
+servers:
+  - url: 'http://metis.io/api/v1'
+paths:
+  /userprofile:
+    get:
+      summary: Get the details of the current user
+      tags: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: ../models/user.v1.yaml
+      operationId: get-users
+  /userengagements:
+    get:
+      summary: Get the engagements of the current user
+      tags: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: ../models/engagement.v1.yaml
+      operationId: get-userengagements
+  /userstakes:
+    get:
+      summary: Get the stake arrangements of th current user
+      tags: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: ../models/stake.v1.yaml
+      operationId: get-userstakes
+  '/engagement/{id}/commit':
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+    post:
+      summary: Commit an engagement as a provider
+      operationId: post-engagement-id-commit
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: string
+      description: 'Commit the user as a provider of an engagment contract. This operation will trigger a token payment through the metis framework. The specified amount of token will be deposited to the engagement contract as a stake. '
+  '/engagement/{id}/finish':
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+    post:
+      summary: ''
+      operationId: post-engagement-id-finish
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                result:
+                  type: string
+                  maxLength: 254
+      description: Notify the engagment client that the work has finished. The result should contain either the content of the work or the desciption to find the content of the work. The result will be written into the contract and ecnrypted by the serivce public key and engagement public key.
+  '/engagement/{id}/review':
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+    post:
+      summary: ''
+      operationId: post-engagement-id-review
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                verdict:
+                  type: string
+                  enum:
+                    - 'yes'
+                    - 'no'
+      description: 'As the engagement client, provide th verdict of the review. If the verdict is yes, this operation will trigger a delayed token transfer of the agreed payment to the client within the engagement contract. Upon the successful close of the engagement contract '
+  '/engagement/{id}/dispute':
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+    post:
+      summary: Raise a dispute of the engagmenet
+      operationId: post-engagement-id-dispute
+      responses:
+        '200':
+          description: OK
+      description: 'Use when there is issues during the engagement. Either the provider or the client can raise a dispute. When the contract is in the dispute state, it cannot be closed without eithre a dispute dismisal or an arbitration.'
+  '/engagement/{id}/dismissdispute':
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+    post:
+      summary: Withdraw a dispute
+      operationId: post-engagement-id-dismissdispute
+      responses:
+        '200':
+          description: OK
+      description: Back to normal.
+  '/engagement/{id}/arbitrate':
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+    post:
+      summary: Provide arbitration results
+      operationId: post-engagement-id-arbitrate
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                clientamount:
+                  type: string
+                provideramount:
+                  type: string
+  /user/register:
+    post:
+      summary: Register the current user with the service (DAC)
+      operationId: post-user-register
+      responses:
+        '200':
+          description: OK
+  /user/exit:
+    post:
+      summary: Unregister the current user from the service (DAC)
+      operationId: post-user-exit
+      responses:
+        '200':
+          description: OK
+  /engagements:
+    get:
+      summary: Get the list of engagements
+      tags: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: ../models/engagement.v1.yaml
+      operationId: get-engagements
+      description: Get the list of enagagmenets
+    post:
+      summary: Create a new engagement
+      operationId: post-engagements
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: ../models/engagement.v1.yaml
+  /stakes:
+    get:
+      summary: Get the list of stake arrangements
+      tags: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: ../models/stake.v1.yaml
+      operationId: get-stakes
+    post:
+      summary: Create a new stake arrangement
+      operationId: post-stakes
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: ../models/stake.v1.yaml
+  '/stake/{id}/commit':
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+    post:
+      summary: commit a stake arragement
+      operationId: post-stake-id-commit
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: string
+  '/stake/{id}/terminate':
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+    post:
+      summary: Propose a termination of the arrangement
+      operationId: post-stake-id-terminate
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  maxLength: 254
+  '/stake/{id}/withdraw':
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+    post:
+      summary: withdraw the staked tokens
+      operationId: post-stake-id-withdraw
+      responses:
+        '200':
+          description: OK
+  '/stake/{id}/dispute':
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+    post:
+      summary: ''
+      operationId: post-stake-id-dispute
+      responses:
+        '200':
+          description: OK
+      description: ''
+  '/stake/{id}/dismissdispute':
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+    post:
+      summary: ''
+      operationId: post-stake-id-dismissdispute
+      responses:
+        '200':
+          description: OK
+  '/stake/{id}/arbitrate':
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+    post:
+      summary: ''
+      operationId: post-stake-id-arbitrate
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                parties:
+                  type: array
+                  items:
+                    type: string
+                amounts:
+                  type: array
+                  items:
+                    type: string
+  /assets:
+    get:
+      summary: Get the list of assets
+      tags: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: ../models/assetmeta.v1.yaml
+              examples: {}
+          headers:
+            x-next:
+              schema:
+                type: string
+              description: the link to the next page of the results
+      operationId: get-assets
+      description: |-
+        Get the list of assets this service can access to. A number of filters are supported.
+        The list returned will include the public assets and private assets that belong to the user. Deprecated assets will not be included.
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: owner
+          description: the owner of the asset
+        - schema:
+            type: string
+          in: query
+          name: name
+          description: the name of the asset
+        - schema:
+            type: string
+          in: query
+          name: minvalue
+          description: the minimum value of the asset
+        - schema:
+            type: string
+          in: query
+          name: maxvalue
+          description: the maximum value of the asset
+        - schema:
+            type: string
+          in: query
+          name: type
+          description: the type of the asset
+    post:
+      summary: Create a new asset
+      operationId: post-assets
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: ../models/asset.v1.yaml
+      description: "Create a new asset. The metadata of the asset is stored as is. The details of the asset is encrypted using the service's public key."
+  /userassets:
+    get:
+      summary: Get the list of assets
+      tags: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: ../models/asset.v1.yaml
+      operationId: get-userassets
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: name
+          description: the name of the asset
+        - schema:
+            type: string
+          in: query
+          name: minvalue
+          description: the minimum value of the asset
+        - schema:
+            type: string
+          in: query
+          name: maxvalue
+          description: the maximum value of the asset
+      description: |-
+        Get the list of assets owned by the current user. A number of filters are available.
+
+        The list returned WILL include the deprecated assets
+  '/asset/{id}/request':
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+    post:
+      summary: Request to use the asset
+      operationId: post-asset-id-request
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: ../models/assetdetail.v1.yaml
+        '402':
+          description: Payment Required
+      description: |-
+        Request to use a particular asset. This operation will trigger a token payment through the metis framework. The user will be charged X amount of tokens calculated based on the value of the asset. If the request is successful, the endpoint will return the details of the asset so that the service can start to build the reference. The asset contract will not manage user sessions. It is up to the DAC (service) to decide how to management the references of the asset. Whether the payment means a life-time grant of the use or a temporary grant of use is a service's sole decsion.
+
+        The asset must be visible and available to the current service.
+  '/asset/{id}':
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+    get:
+      summary: Get the detail of the asset
+      tags: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: ../models/asset.v1.yaml
+        '403':
+          description: Forbidden
+      operationId: get-asset-id
+      description: Get the full details of an asset. The asset must be accessible to the current user.
+    put:
+      summary: Modify an asset
+      operationId: put-asset-id
+      responses:
+        '200':
+          description: OK
+        '403':
+          description: Forbidden
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: ../models/asset.v1.yaml
+  '/engagement/{id}/close':
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+    post:
+      summary: Close an engagement
+      operationId: post-engagement-id-close
+      responses:
+        '200':
+          description: OK
+      description: "Properly end the engagement. Either party can request to close the contract. Once both parties agree or if there is no response from the other party for 7 days, the current balances stored in the contract will be finalized and distributed to each party's user account."
+  '/engagement/{id}/requestarbitration':
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+    post:
+      summary: Request an arbitration
+      operationId: post-engagement-id-requestarbitration
+      responses:
+        '200':
+          description: OK
+      description: "An arbitration can be requested. But the servie may come with a charge. It's up to the DAC to decide the arbitration mechanism."
+  '/stake/{id}/requestarbitration':
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+    post:
+      summary: Request an arbitration
+      operationId: post-stake-id-requestarbitration
+      responses:
+        '200':
+          description: OK
+components:
+  schemas: {}
+  securitySchemes:
+    authtoken:
+      type: oauth2
+security:
+  - authtoken: []

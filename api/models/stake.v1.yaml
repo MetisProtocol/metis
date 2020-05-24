@@ -1,0 +1,19 @@
+title: stake
+type: object
+x-tags:
+  - Common
+x-examples: {}
+description: describe a stake contract info
+properties:
+  id:
+    type: string
+  contract:
+    $ref: ./stakecontract.v1.yaml
+  stakeamount:
+    type: string
+  parties:
+    type: array
+    items:
+      type: string
+required:
+  - stakeamount

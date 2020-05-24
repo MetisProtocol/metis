@@ -1,0 +1,9 @@
+title: asset
+type: object
+properties:
+  id:
+    type: string
+  meta:
+    $ref: ./assetmeta.v1.yaml
+  detail:
+    $ref: ./assetdetail.v1.yaml

@@ -1,0 +1,9 @@
+title: engagementcontract
+type: object
+properties:
+  address:
+    type: string
+  timestamp:
+    type: string
+  index:
+    type: number

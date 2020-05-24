@@ -1,0 +1,26 @@
+title: assetmeta
+type: object
+properties:
+  owner:
+    type: string
+  name:
+    type: string
+  version:
+    type: string
+  value:
+    type: string
+  status:
+    type: string
+    enum:
+      - public
+      - private
+      - deprecated
+  lastmodified:
+    type: string
+    format: date-time
+  metadata:
+    type: string
+  type:
+    type: string
+  numref:
+    type: integer
