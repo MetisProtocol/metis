@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./MathHelper.sol";
 import "./IRegistrar.sol";
 import "./IMetis.sol";
+import "./IDAC.sol";
 import "./ABDKMath.sol";
 
 /**
@@ -15,6 +16,8 @@ contract Metis is IMetis, Ownable{
     using SafeMath for uint256;
     event Transaction (address operator, address from, address to, uint256 amount, bytes msg1, bytes msg2);
     event Parameter(address operator, address dacAddr, uint256 from, uint256 to, bytes msg1);
+
+    uint public _version = 1; //metis core version
 
     address public _tokenAddr;
     address private _registrar;
@@ -35,20 +38,30 @@ contract Metis is IMetis, Ownable{
     constructor(address tokenAddr, address registrar) {
         _tokenAddr = tokenAddr;
         _registrar = registrar;
-        _genesisDac = IRegistrar(_registrar).createNew([msg.sender], address(this), "GENESIS", "OG"); 
-        emit Transaction (msg.sender, msg.sender, _genesisDac, 0, "Genesis","");
+        _genesisDac = IRegistrar(_registrar).createDAC(msg.sender, "_GENESIS", "OG", address(0)); 
+        emit Transaction (msg.sender, msg.sender, _genesisDac, 0, "Genesis","Create");
     }
 
     function isDacRegistered(address dac) view returns (bool) {
         return IRegistrar(_registrar).isActive(dac);
     }
 
+    function createDAC(string name, string symbol, address business) public payable {
+        require (business != address(0), "0 address not supported");
+        IRegistrar(_registrar).createDAC(msg.sender, name, symbol, msg.value, business); 
+        address dacAddr = IRegistrar(_registrar).getLastDAC();
+        _stake(sender, dacAddr, msg.value);
+    }
+
+    function stake(address sender) public payable {
+        _stake(sender, msg.sender, msg.value);
+    }
     /**
      * @dev commit funds to the contract. participants can keep committing after the pledge ammount is reached
      * @param amount amount of fund to commit
      * The sender must authorized this contract to be the operator of senders account before committing
      */
-    function stake(address sender) payable{
+    function _stake(address sender, address dacAddr, uint256 value) private {
         address dacAddr = msg.sender;
         require(isDacRegistered(dacAddr), "Invalid DAC");
         uint256 storage z = _zvalues[dacAddr];
@@ -58,7 +71,6 @@ contract Metis is IMetis, Ownable{
         uint256 storage lockRatioDac = _lockRatios[dacAddr];
         uint256 storage totalEth = _eths[_genesisDac];
         uint256 storage ethDac = _eths[dacAddr];
-        uint256 value = msg.value;
         totalEth.add(value);
         ethDac.add(value);
         uint256 tokenMinted = MathHelper.mulDiv(value, 10^18, _curPrice); //value * 10^18 / curPrice
@@ -96,6 +108,7 @@ contract Metis is IMetis, Ownable{
                 break;
             }
         }
+
         // the tvl of the dac has been modified. recalculate the total tvl.
         tvl = preTvl.sub(preTvlDac).add(tvlDac);
         emit Parameter(sender, dacAddr, preTvl, tvl, "TVL");
@@ -150,4 +163,19 @@ contract Metis is IMetis, Ownable{
     function getNumTokens(address dacAddr) returns (uint256){
         return IERC20(_tokenAddr).balanceOf(dacAddr);
     }
+
+
+    /**
+     * migrate a DAC from a previous version of metis
+     * @param source the older metis
+     * @param dacAddr the dac to be migrated
+     */
+    function migrateDAC(address dacAddr, address source) public {
+        require(isDacRegistered(dacAddr), "Invalid DAC");
+        require(msg.sender == IDAC(dacAddr)._creator, "only the creator can initiate a migration");
+        // this is the first version. there for there is nothing to be migrated.
+
+        IRegistrar(_registrar).migrateDAC(dacAddr);
+    }
+
 }

@@ -46,7 +46,7 @@ contract TaskList is Ownable{
         task.stakereq = stakereq;
         task.taskowner = owner;
         task.status = STATUS.OPEN;
-        tasks.push(task);   
+        taskList.push(task);   
 
         //deploy MSC
         task.msc = new MSC(owner, [], msg.sender, 30 days, address(this), stakereq, prize, msg.sender);

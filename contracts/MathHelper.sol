@@ -1,3 +1,4 @@
+pragma solidity ^0.5.0;
 contract MathHelper {
     // full precision multiplication. no overflow
     function fullMul (uint x, uint y)

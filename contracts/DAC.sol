@@ -24,6 +24,11 @@ contract DAC is IDAC, Ownable{
     event Transaction (address operator, address from, address to, uint256 amount, bytes msg1, bytes msg2);
     
     Roles.Role private _adminRole;
+    address _creator;
+    address _metisAddr;
+    string _name;
+    string _symbol;
+    address _business;
 
     struct Profile {
         uint256 reputation; 
@@ -39,8 +44,7 @@ contract DAC is IDAC, Ownable{
     address[] public _memberArray;
     uint256 public _dividendPool;
     uint256 public _totalRep = 0;
-
-
+    
     /**
      * @dev participants cannot be empty
      * @param participants list of participants
@@ -50,21 +54,24 @@ contract DAC is IDAC, Ownable{
      * @param amount amount of pledge requred
      */
     constructor(
-	    address[] memory admins,
+        address creator,
         address metisAddr,
         string name,
-        string symbol
-    )
-    public
-    {
+        string symbol,
+        uint256 stake,
+        address business
+    ) public {
+        _metisAddr = metisAddr;
+        _name = name;
+        _creator = creator;
+        _symbol = symbol;
+        _business = business;
         _metis = IMetis(metisAddr);
-        for (uint256 i = 0; i < admins.length; ++i) {
-	        Profile storage p = _members[admins[i]];
-            p.lastUpdateTS = now;
-            _totalRep.add(1);
-            _adminRole.add(admins[i]);
-            _memberArray.push(admins[i]);
-        }
+        Profile storage p = _members[creator];
+        p.lastUpdateTS = now;
+        p.unlocked = stake;
+        _adminRole.add(admin);
+        _memberArray.push(admin);
 
         _taskList = new TaskList();
     }
@@ -82,15 +89,28 @@ contract DAC is IDAC, Ownable{
      */
     function stake(address sender) payable{
         Profile storage p = _members[sender];
+        uint256 preNumTokens = _metis.getNumTokens(address(this));
         require(_metis.stake.value(msg.value)(sender), "Metis Stake failed");
+        uint256 newNumTokens = _metis.getNumTokens(address(this)).sub(preNumTokens);
+        uint lockRatio = _metis.lockRatioOf(address(this));
 
+        if (p.lastUpdateTS == 0) {
+            // new memeber
+            p.lastLockRatio = 100; //always assume 100% locked
+            p.locked = newNumTokens;
+        } else {
+            uint256 locked = MathHelper.mulDiv(newNumTokens, p.lastLockRatio,100);
+            p.locked = p.locked.add(locked);
+            p.unlocked = p.unlocked.add(newNumTokens.sub(locked));
+        }
+        updateBalance(sender);
         emit Transaction(sender, sender, address(this), msg.value, "Stake", "");
     }
 
     /**
      * @dev return the current balance of the sender
      */
-    function balance() public view returns (uint256 locked, uint256 unlocked) {
+    function bal() public view returns (uint256 locked, uint256 unlocked) {
         Profile memory p = _members[msg.sender];
         locked = p.locked;
         unlocked = p.unlocked;
@@ -111,10 +131,10 @@ contract DAC is IDAC, Ownable{
         Profile memory p = members[msg.sender];
         uint lockRatio = _metis.lockRatioOf(address(this));
         if (lockRatio != p.lastLockRatio) {
-            uint256 balance = MathHelper.mulDiv(p.locked, 100, p.lastLockRatio);
-            uint256 extra = p.locked.add(p.unlocked).sub(balance);
-            p.locked = MathHelper.mulDiv(balance, lockRatio, 100);
-            p.unlocked = balance.sub(locked).add(extra);
+            uint256 bal = MathHelper.mulDiv(p.locked, 100, p.lastLockRatio);
+            uint256 extra = p.locked.add(p.unlocked).sub(bal);
+            p.locked = MathHelper.mulDiv(bal, lockRatio, 100);
+            p.unlocked = bal.sub(locked).add(extra);
             p.lastLockRatio = lockRatio;
             updateReputation(msg.sender);
         }
@@ -130,7 +150,7 @@ contract DAC is IDAC, Ownable{
         Profile storage p = _members[msg.sender];
         require(p.reputation > 0, "NOT_A_MEMBER"); 
         require(updateBalance(), "Update balance failed");
-        (locked, unlocked) = balance();
+        (locked, unlocked) = bal();
         require(unlocked >= amount, "INSUFFICIENT_BALANCE");
         
         IERC20(_metis._tokenAddr).transfer(msg.sender, amount);
