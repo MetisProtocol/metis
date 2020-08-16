@@ -1,71 +1,41 @@
 pragma solidity >=0.4.22 <0.6.0;
 
-contract TaskList {
+import "@openzeppelin/contracts/ownership/Ownable.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import "./MSC.sol";
+
+contract TaskList is Ownable{
     
-    
-    enum STATUS {NONE, OPEN, EXECUTING, REVIEW, REJECT, DONE}
+    using SafeMath for uint256;
+
+    event NewTask(address owner, uint256 index); 
+    event FinishTask(address owner, uint256 index); 
+    event ReviewTask(address owner, uint256 index, bool verdict); 
+
+    enum STATUS {NONE, OPEN, STAKING, EXECUTING, REVIEW, REJECT, DONE}
     
     struct Task {
         string infourl; // wiki link to the task details
-        uint timestamp; //timestamp of the last status update
+        uint256 timestamp; //timestamp of the last status update
         STATUS status;
-        uint expiry; // must finish before the expiry
-        uint stakereq; // stake requirement
+        uint256 expiry; // must finish before the expiry
+        uint256 stakereq; // stake requirement
         address taskowner;  // owner of this task
         address delegate;  // taker of the task;
         string resulturl;
-        uint prize;
+        uint256 prize;
+        MSC msc;
     }
     
-    enum ROLE {NONE, TASKOWNER, SERVICE, ADMIN}
-
-    address owner;
     mapping (address => Task[]) public tasklist;
-    mapping (address => bool) taskownerlist;
-    mapping (address => bool) servicelist;
-    mapping (address => bool) adminlist;
     
-    address[] public taskaddresses;
-
     constructor() public {
-        owner = msg.sender;
     }
 
-    function transferOwner (address newOwner) public {
-        if (msg.sender == owner) {
-            owner = newOwner;
-        }
-    }
-    
-    function addTaskOwner (address entity) public {
-        if (msg.sender == owner || adminlist[msg.sender]) {
-            taskownerlist[entity] = true;
-        }
-    }
-    
-    function addService (address entity) public {
-        if (msg.sender == owner || adminlist[msg.sender]) {
-            servicelist[entity] = true;
-        }
-    }
-    
-    function addAdmin (address entity) public {
-        if (msg.sender == owner) {
-            adminlist[entity] = true;
-        }
-    }
     /// add a new task to the list
     /// pass address(0) in delegate to open the task for all
-    function addTask (string memory infourl, uint expiry, uint prize, address delegate) public returns (int) {
-        if (taskownerlist[msg.sender] == false) {
-            return -1;
-        }
+    function addTask (address owner, string memory infourl, uint256 expiry, uint256 prize, uint256 stakereq) public onlyOwner {
         Task[] storage tasks = tasklist[msg.sender];
-        uint index = 0;
-        
-        for (index = 0; index < tasks.length; index++) {
-            if (tasks[index].status == STATUS.DONE) break;
-        }
         
         Task memory task;
         
@@ -73,76 +43,93 @@ contract TaskList {
         task.timestamp = block.timestamp;
         task.expiry = expiry;
         task.prize = prize;
-        task.taskowner = msg.sender;
-        task.delegate = delegate;
+        task.stakereq = stakereq;
+        task.taskowner = owner;
         task.status = STATUS.OPEN;
-        if (index == tasks.length) {
-            // 5 concurrent jobs per address only
-            if (index == 5) return -2;
-            if (index == 0) {
-                // new owner
-                taskaddresses.push(msg.sender);
-            }
-            tasks.push(task);   
-        } else {
-            tasks[index] = task;
-        }
-        return int(index);
+        tasks.push(task);   
+
+        //deploy MSC
+        task.msc = new MSC(owner, [], msg.sender, 30 days, address(this), stakereq, prize, msg.sender);
+
+        emit NewTask(owner, tasks.length - 1);
     }
     
     /// take the task
-    function takeTask (address taskowner, uint index) public returns (bool)  {
-        if (servicelist[msg.sender] == false) {
-            return false;
-        }
-        if (index >= tasklist[taskowner].length) return false;
+    function takeTask (address taskowner, uint256 index, address taker) public onlyOwner {
+        require(index < tasklist[taskowner].length, "Index out of bound");
+
         Task storage task = tasklist[taskowner][index];
-        if (task.status == STATUS.OPEN && (task.delegate == address(0) || task.delegate == msg.sender)) {
-            task.timestamp = block.timestamp;
-            task.delegate = msg.sender;
-            task.status = STATUS.EXECUTING;
-            return true;
-        }
-        return false;
+        require(task.status == STATUS.OPEN, "Task is not open");
+        require(task.msc.contractStatus == MSC.ContractStatus.PENDING, "Contract is not open");
+
+        task.timestamp = block.timestamp;
+        task.delegate = taker;
+        task.status = STATUS.STAKING;
+    }
+
+    /// reopen the task
+    function reopenTask (address taskowner, uint256 index) public {
+        require(index < tasklist[taskowner].length, "Index out of bound");
+        require(taskowner == msg.sender, "Not a task owner");
+
+        Task storage task = tasklist[taskowner][index];
+        require(task.status == STATUS.STAKING, "Task is not in staking");
+        require(task.msc.contractStatus == MSC.ContractStatus.PENDING, "Contract is not open");
+        task.timestamp = block.timestamp;
+        task.delegate = address(0);
+        task.status = STATUS.OPEN;
+    }
+
+    /// reopen the task
+    function startTask (address taskowner, uint256 index, address sender) public {
+        require(index < tasklist[taskowner].length, "Index out of bound");
+        require(taskowner == msg.sender, "Not a task owner");
+
+        Task storage task = tasklist[taskowner][index];
+        require (task.status == STATUS.STAKING, "Task is not in staking");
+        require(task.msc.contractStatus == MSC.ContractStatus.EFFECTIVE, "Contract is not effective");
+        task.timestamp = block.timestamp;
+        task.status = STATUS.EXECUTING;
     }
     
     /// put the task to review
-    function finshTask (address taskowner, uint index, string memory resulturl) public returns (bool)  {
-        if (servicelist[msg.sender] == false) {
-            return false;
-        }
-        if (index >= tasklist[taskowner].length) return false;
+    function finshTask (address taskowner, uint256 index, string memory resulturl) public {
+        require(index < tasklist[taskowner].length, "Index out of bound");
+
         Task storage task = tasklist[taskowner][index];
-        if (task.delegate == msg.sender && (task.status == STATUS.EXECUTING || task.status == STATUS.REJECT)) {
-            task.resulturl = resulturl;
-            task.status = STATUS.REVIEW;
-            return true;
-        }
-        return false;
+        require(task.delegate == msg.sender, "Not a task taker");
+        require (task.status == STATUS.EXECUTING || task.status == STATUS.REJECT, "Task is not ready for review");
+        require(task.msc.contractStatus == MSC.ContractStatus.EFFECTIVE, "Contract is not effective");
+        task.timestamp = block.timestamp;
+        task.status = STATUS.REVIEW;
+        task.resulturl = resulturl;
+        emit FinishTask(taskowner, index);
     }
     
     /// review verdict
-    function reviewTask(uint index, bool verdict) public returns (bool)  {
-        if (taskownerlist[msg.sender] == false) return false;
-        if (index >= tasklist[msg.sender].length) return false;
+    function reviewTask(uint256 index, bool verdict) public {
+        address taskowner = msg.sender;
+
+        require(index < tasklist[taskowner].length, "Index out of bound");
+        require (task.status == STATUS.REVIEW, "Task is not in review-pending");
+
         Task storage task = tasklist[msg.sender][index];
-        if (task.status == STATUS.REVIEW) {
-            if (verdict == true) {
-                task.status = STATUS.DONE;
-            }
-            else {
-                task.status = STATUS.REJECT;
-            }
-            return true;
+        require(task.msc.contractStatus == MSC.ContractStatus.EFFECTIVE, "Contract is not effective");
+        if (verdict == true) {
+            task.status = STATUS.DONE;
+            emit FinishTask(taskowner, index, true);
         }
-        return false;
-    }
-    
-    function getNumTaskLists() public view returns (uint) {
-        return taskaddresses.length;
+        else {
+            task.status = STATUS.REJECT;
+            emit FinishTask(taskowner, index, false);
+        }
     }
     
     function getNumTaskByAddress(address taskowner) public view returns (uint) {
         return tasklist[taskowner].length;
+    }
+
+    function getMSCByTask(address taskowner, uint index) public view returns(address) {
+        return tasklist[taskowner][index].mscAddr;
     }
 }

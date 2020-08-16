@@ -1,20 +1,19 @@
 pragma solidity ^0.5.0;
 
-import "@openzeppelin/contracts/token/ERC777/ERC777.sol";
-import "@openzeppelin/contracts/token/ERC777/IERC777Recipient.sol";
-import "@openzeppelin/contracts/token/ERC777/IERC777Sender.sol";
 import "@openzeppelin/contracts/access/Roles.sol";
+import "@openzeppelin/contracts/ownership/Ownable.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./IMSC.sol";
+import "./IDAC.sol";
 
 /**
  * @dev implementation of MSC
  */
-contract MSC is IMSC, IERC777Recipient, IERC777Sender{
-    IERC1820Registry private _erc1820 = IERC1820Registry(0x1820a4B7618BdE71Dce8cdc73aAB6C95905faD24);
-    bytes32 constant private TOKENS_RECIPIENT_INTERFACE_HASH = keccak256("ERC777TokensRecipient");
+contract MSC is IMSC, Ownable {
+    using SafeMath for uint256;
 
     using Roles for Roles.Role;
-    enum ContractStatus { Pending, Effective, Completed, Dispute, Requested, Closed }
+    enum ContractStatus { Pending, SemiCommitted, Effective, Completed, Dispute, Requested, Closed }
     enum ParticipantStatus { Pending,Committed, Wantout, Completed, Dispute, Closed }
 
     event Transaction (address operator, address from, address to, uint256 amount, bytes msg1, bytes msg2);
@@ -25,20 +24,25 @@ contract MSC is IMSC, IERC777Recipient, IERC777Sender{
     
     struct Pledge {
         uint256 value; 
+        uint256 stakedValue; 
         ParticipantStatus status;
     }
 
     Roles.Role private _participants;
+    address public _starter; // starter of the contract
     address private _tokenAddr; //token contract address
-    IERC777 private _token;
     uint private lastStatusChange;
     uint private disputeRollBackDays;
     uint private numCommitted;
     uint private numWantedout;
     uint256 public pledgeAmount;
+    uint256 public _prizeAmount;
+    uint256 public _afterTax; //afterTax value of the current transaction.
     uint public disputePeriod;
+    uint public numWithdraws;
     address public disputeInitiator;
     address payable public facilitator;
+    address public _dacAddr; // address to the dac
 
     ContractStatus public contractStatus;
 
@@ -55,40 +59,63 @@ contract MSC is IMSC, IERC777Recipient, IERC777Sender{
      * @param amount amount of pledge requred
      */
     constructor(
+        address memory starter,
 	    address[] memory participants,
 	    address payable facilitator_param,
         uint period,
         address tokenAddr,
-        uint256 amount
+        uint256 stakeAmount,
+        uint256 prizeAmount,
+        address dacAddr
     )
     public
     {
+        _participants.add(starter);
+        _starter = starter;
         participantsArray = participants;
         for (uint256 i = 0; i < participants.length; ++i) {
 	        _participants.add(participants[i]);
         }
 	    facilitator = facilitator_param;
         _tokenAddr = tokenAddr;
-        _token = IERC777(tokenAddr);
-        pledgeAmount = amount;
+        pledgeAmount = stakeAmount;
+        _prizeAmount = prizeAmount;
         disputePeriod = period;
-        _erc1820.setInterfaceImplementer(address(this), TOKENS_RECIPIENT_INTERFACE_HASH, address(this));
+        _dacAddr = dacAddr;
+    }
+
+    /**
+     * @dev add a participant. only possible when the contract is still in pending state
+     * @param p the participant
+     */
+    function addParticipant(address p) public onlyOwner {
+        require(contractStatus == ContractStatus.Dispute, "STATUS_IS_NOT_PENDING");
+        require(!(_participants.has(msg.sender)), "Already a participant");
+	    _participants.add(p);
+        participantsArray.push(p);
     }
 
     /**
      * @dev commit funds to the contract. participants can keep committing after the pledge ammount is reached
      * @param amount amount of fund to commit
-     & @param from the address of sender
+     * @param from the address of sender
      * The sender must authorized this contract to be the operator of senders account before committing
      */
     function _commit(address from, uint256 amount) private {
         Pledge storage p = parties[from];
-        p.value += amount;
-        if (p.value >= pledgeAmount && p.status == ParticipantStatus.Pending) {
+        p.value = p.value.add(amount);
+        p.stakedValue = p.stakedValue.add(amount);
+        uint256 threshold = pledgeAmount;
+        if (from == _starter) {
+            threshold = pledgeAmount.add(_prizeAmount);
+        }
+        if (from != _starter && p.value >= threshold && p.status == ParticipantStatus.Pending) {
                 p.status = ParticipantStatus.Committed;
                 numCommitted++;
                 if (numCommitted == participantsArray.length) {
                         contractStatus = ContractStatus.Effective;
+                } else {
+                    contractStatus = ContractStatus.SemiCommited;
                 }
         }
         lastStatusChange = now;
@@ -99,16 +126,19 @@ contract MSC is IMSC, IERC777Recipient, IERC777Sender{
      * @param amount amount of fund to commit
      * The sender must authorized this contract to be the operator of senders account before committing
      */
-    function commit(uint256 amount) public {
-
+    function commit(uint256 amount, address sender) public payable{
         // Only participants are allowed
         require(amount > 0, "AMOUNT_NOT_GREATER_THAN_ZERO");
-        require(_participants.has(msg.sender), "DOES_NOT_HAVE_PARTICIPANT_ROLE");
-        require(_token.balanceOf(msg.sender) >= amount, "INSUFFICIENT_BALANCE");
-        require(_token.isOperatorFor(address(this), msg.sender), "NOT_AUTHORIZED_AS_OPERATOR");
+        require(_participants.has(sender), "DOES_NOT_HAVE_PARTICIPANT_ROLE");
         
-        // this will trigger tokensToReceive and call _commit
-        _token.operatorSend(msg.sender, address(this), amount, "", "Pledge");
+        _commit(sender, amount);
+    }
+
+    function() payable {
+        // this means we have the after tax ether value
+        if (msg.sender == _dacAddr) {
+            _afterTax = msg.value;
+        }
     }
 
     /**
@@ -140,22 +170,25 @@ contract MSC is IMSC, IERC777Recipient, IERC777Sender{
      * The sender must have enough fund pledged. Contract will be closed and selfdestruct if all funds are withdrawn
      * The facilitator will be paid with the gas free up after selfdestruct
      */
-    function withdraw() public {
-        Pledge storage p = parties[msg.sender];
+    function withdraw(address to) public { 
+        Pledge storage p = parties[to];
         require(contractStatus == ContractStatus.Completed, "STATUS_IS_NOT_COMPLETED");
         require(p.value > 0, "AMOUNT_NOT_GREATER_THAN_ZERO");
-        require(_token.balanceOf(address(this)) >= p.value, "INSUFFICIENT_BALANCE");
         
         p.status = ParticipantStatus.Closed;
-        _token.send(msg.sender,p.value, "Withdraw");
+        lastStatusChange = now;
+        numWithdraws++;
+
+        requrie(IDAC(_dacAddr).newTransaction.value(p.value)(from, 1), "New transaction submission failed");
+        valueToSend = _afterTax;
 
         p.value = 0;
-        lastStatusChange = now;
+        require(msg.sender.transfer(valueToSend), "transfer failed");
 
         // indicate withdraw order is initiated. otherwise, the send will be blocked
         withdraworder[msg.sender] = true;
 
-        if (_token.balanceOf(address(this)) == 0) {
+        if ( numWithdraws == participantsArray.length ) {
                 contractStatus = ContractStatus.Closed;
                 selfdestruct(facilitator);
         }
@@ -263,40 +296,8 @@ contract MSC is IMSC, IERC777Recipient, IERC777Sender{
             totalvalue += p.value;
         }
 
-        // just to make sure the resolution is valid
-        require(_token.balanceOf(address(this)) >= totalvalue, "INSUFFICIENT_BALANCE");
-
         emit DisputeResolution(msg.sender, lastStatusChange, participants, values);
         lastStatusChange = now;
     }
 
-    function tokensReceived (
-            address operator,
-            address from,
-            address to,
-            uint256 amount,
-            bytes calldata userData,
-            bytes calldata operatorData
-    ) external {
-       require(msg.sender == _tokenAddr, "Invalid token");
-       require(_participants.has(from), "SENDER_DOES_NOT_HAVE_PARTICIPANT_ROLE");
-
-       emit Transaction(operator, from, to, amount, userData, operatorData); 
-
-       _commit(from, amount);
-    }
-
-    function tokensToSend (
-            address operator,
-            address from,
-            address to,
-            uint256 amount,
-            bytes calldata userData,
-            bytes calldata operatorData
-    ) external {
-       // must call withdraw to get the token sent
-       require(withdraworder[to] == true, "WITHDRAW_NOT_INITIATED");
-       withdraworder[to] = false;
-       emit Transaction(operator, from, to, amount, userData, operatorData); 
-    }
 }
