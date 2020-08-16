@@ -28,7 +28,7 @@
     "url": "git+https://github.com/bossyuansu/metis.git"
   },
   "author": "Yuan Su",
-  "license": "ISC",
+  "license": "GPL-3.0-or-later",
   "bugs": {
     "url": "https://github.com/bossyuansu/metis/issues"
   },
