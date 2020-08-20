@@ -7,16 +7,14 @@ interface IRegistrar {
     
     using SafeMath for uint256;
 
-    uint public _version;
-
     function setMetisAddr(address metis) external;
 
-    function createDAC (address owner, string memory name, string memory symbol, uint256 stake, address business) external;
-    function isActive(address dacAddr) external;
+    function createDAC (address owner, string calldata name, string calldata symbol, uint256 stake, address business) external;
+    function isActive(address dacAddr) external view returns(bool);
     
     function migrateDAC (address dacAddr) external;
 
     function closeDAC (address dacAddr) external;
 
-    function getLastDAC() external;
+    function getLastDAC() external view returns(address);
 }

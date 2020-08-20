@@ -1,8 +1,9 @@
 pragma solidity ^0.5.0;
-contract MathHelper {
+library MathHelper {
+
     // full precision multiplication. no overflow
     function fullMul (uint x, uint y)
-    public pure returns (uint l, uint h)
+    internal pure returns (uint l, uint h)
     {
        uint mm = mulmod (x, y, uint (-1));
        l = x * y;
@@ -11,7 +12,7 @@ contract MathHelper {
     }
 
     // return x*y/z
-    function mulDiv (uint x, uint y, uint z) public pure returns (uint) {
+    function mulDiv (uint x, uint y, uint z) internal pure returns (uint) {
       (uint l, uint h) = fullMul (x, y);
        require (h < z);
        uint mm = mulmod (x, y, z);
@@ -35,7 +36,7 @@ contract MathHelper {
 
     // x^n
     function pow (uint x, uint n)
-    public pure returns (uint r) {
+    internal pure returns (uint r) {
        r = 1.0;
        while (n > 0) {
            if (n % 2 == 1) {

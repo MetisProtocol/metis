@@ -34,7 +34,8 @@ contract DAC is IDAC, Ownable{
         uint256 reputation; 
         uint256 locked;
         uint256 unlocked;
-        uint256 lastUnlockStage;
+        uint256 dividend;
+        uint256 lastLockRatio;
         uint256 lastUpdateTS;
         uint256 numComplaintsReceived;
         uint256 numFinishedTasks;
@@ -47,20 +48,15 @@ contract DAC is IDAC, Ownable{
     
     /**
      * @dev participants cannot be empty
-     * @param participants list of participants
-     * @param facilitator_param address of the facilitator, who can resolve disputes. must be payable
-     * @param period period in days of time one can raise disputes after a participant requests the exit
-     * @param tokenAddr token contract address
-     * @param amount amount of pledge requred
      */
     constructor(
         address creator,
         address metisAddr,
-        string name,
-        string symbol,
+        string memory name,
+        string memory symbol,
         uint256 stake,
         address business
-    ) public {
+    ) Ownable() public {
         _metisAddr = metisAddr;
         _name = name;
         _creator = creator;
@@ -70,29 +66,30 @@ contract DAC is IDAC, Ownable{
         Profile storage p = _members[creator];
         p.lastUpdateTS = now;
         p.unlocked = stake;
-        _adminRole.add(admin);
-        _memberArray.push(admin);
+        _adminRole.add(creator);
+        _memberArray.push(creator);
 
         _taskList = new TaskList();
     }
 
     /**
      * @dev commit funds to the dac. 
-     & @param sender address of sender
      */
-    function() payable {
+    function() external payable {
     }
 
     /**
      * @dev commit funds to the dac. 
      & @param sender address of sender
      */
-    function stake(address sender) payable{
+    function stake(address sender) public payable{
         Profile storage p = _members[sender];
+
         uint256 preNumTokens = _metis.getNumTokens(address(this));
-        require(_metis.stake.value(msg.value)(sender), "Metis Stake failed");
+
+        _metis.stake.value(msg.value)(sender);
+
         uint256 newNumTokens = _metis.getNumTokens(address(this)).sub(preNumTokens);
-        uint lockRatio = _metis.lockRatioOf(address(this));
 
         if (p.lastUpdateTS == 0) {
             // new memeber
@@ -110,7 +107,7 @@ contract DAC is IDAC, Ownable{
     /**
      * @dev return the current balance of the sender
      */
-    function bal() public view returns (uint256 locked, uint256 unlocked) {
+    function getBalance() public view returns (uint256 locked, uint256 unlocked) {
         Profile memory p = _members[msg.sender];
         locked = p.locked;
         unlocked = p.unlocked;
@@ -128,15 +125,22 @@ contract DAC is IDAC, Ownable{
      * @dev return the current balance of the sender
      */
     function updateBalance() public {
-        Profile memory p = members[msg.sender];
+        updateBalance(msg.sender);
+    }
+
+    /**
+     * @dev return the current balance of the sender
+     */
+    function updateBalance(address sender) public {
+        Profile memory p = _members[sender];
         uint lockRatio = _metis.lockRatioOf(address(this));
         if (lockRatio != p.lastLockRatio) {
-            uint256 bal = MathHelper.mulDiv(p.locked, 100, p.lastLockRatio);
-            uint256 extra = p.locked.add(p.unlocked).sub(bal);
-            p.locked = MathHelper.mulDiv(bal, lockRatio, 100);
-            p.unlocked = bal.sub(locked).add(extra);
+            uint256 newLocked = MathHelper.mulDiv(MathHelper.mulDiv(p.locked, 100, p.lastLockRatio), lockRatio, 100);
+            uint256 diff = p.locked.sub(newLocked);
+            p.locked = newLocked;
+            p.unlocked = p.unlocked.add(diff);
             p.lastLockRatio = lockRatio;
-            updateReputation(msg.sender);
+            updateReputation(sender);
         }
         p.lastUpdateTS = now;
     }
@@ -149,38 +153,44 @@ contract DAC is IDAC, Ownable{
     function withdraw(uint256 amount) public {
         Profile storage p = _members[msg.sender];
         require(p.reputation > 0, "NOT_A_MEMBER"); 
-        require(updateBalance(), "Update balance failed");
-        (locked, unlocked) = bal();
+
+        uint256 locked;
+        uint256 unlocked;
+
+        updateBalance();
+        (locked, unlocked) = getBalance();
         require(unlocked >= amount, "INSUFFICIENT_BALANCE");
         
-        IERC20(_metis._tokenAddr).transfer(msg.sender, amount);
+        p.unlocked = p.unlocked.sub(amount);
+        IERC20(_metis.getTokenAddr()).transfer(msg.sender, amount);
         emit Transaction(msg.sender, address(this), msg.sender, amount, "Withdraw", "");
     }
 
     /**
      * @dev tax and dividents from transactions
-     * @param sender sender address
-     * @param type 0 if staking or 1 if paying
+     * @param transType 0 if staking or 1 if paying
      */
     function newTransaction(address taskOwner, address taskTaker, uint transType) public payable {
         uint256 preNumTokens = _metis.getNumTokens(address(this));
-        uint256 preEthDac = _metis._eths[address(this)];
-        require(_metis.newTransaction.value(msg.value)(msg.sender), "Metis Transaction failed");
-        uint256 newNumTokens = _metis.getNumTokens(address(this)).sub(preNumTokens);
-        uint256 newValue = _metis._eths[address(this)].sub(preEthDac);
+        uint256 preEthDac = _metis.getBalance(address(this));
 
-        require(msg.sender.transfer(newValue), "transfer failed");
+        _metis.newTransaction.value(msg.value)(msg.sender);
+
+        uint256 newNumTokens = _metis.getNumTokens(address(this)).sub(preNumTokens);
+        uint256 newValue = _metis.getBalance(address(this)).sub(preEthDac);
+
+        msg.sender.transfer(newValue);
 
         if (transType == 0) {
-            Profile storage p = memebers[taskOwner];
+            Profile storage p = _members[taskOwner];
             p.unlocked = p.unlocked.add(newNumTokens);
         } else if (transType == 1) {
-            Profile storage ownerP = memebers[taskOwner];
-            Profile storage workerP = memebers[taskTaker];
+            Profile storage ownerP = _members[taskOwner];
+            Profile storage workerP =_members[taskTaker];
             require(ownerP.lastUpdateTS > 0, "Invalid Owner");
             require(workerP.lastUpdateTS > 0, "Invalid Worker");
-            ownerAdd = MathHelper.mulDiv(newNumTokens, 25, 100);
-            workerAdd = MathHelper.mulDiv(newNumTokens, 55, 100);
+            uint256 ownerAdd = MathHelper.mulDiv(newNumTokens, 25, 100);
+            uint256 workerAdd = MathHelper.mulDiv(newNumTokens, 55, 100);
             ownerP.unlocked = ownerP.unlocked.add(ownerAdd);
             workerP.unlocked = workerP.unlocked.add(workerAdd);
             _dividendPool = _dividendPool.add(newNumTokens.sub(ownerAdd).sub(workerAdd));
@@ -200,6 +210,7 @@ contract DAC is IDAC, Ownable{
             Profile storage p = _members[_memberArray[i]];
             uint256 dividend = MathHelper.mulDiv(p.reputation, dividendPool, _totalRep);
             p.unlocked = p.unlocked.add(dividend);
+            p.dividend = p.dividend.add(dividend);
             _dividendPool = _dividendPool.sub(dividend);
         }
     }
@@ -227,6 +238,14 @@ contract DAC is IDAC, Ownable{
     }
 
     function getTaxRate() public view returns (uint256) {
-        return _metis._taxRate;
+        return _metis.getTaxRate();
+    }
+
+    function getCreator() public view returns (address) {
+        return _creator;
+    }
+
+    function setMetis(address metis) public onlyOwner {
+        _metis = IMetis(metis);
     }
 }

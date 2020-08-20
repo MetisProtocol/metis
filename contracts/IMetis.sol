@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 interface IMetis {
     using SafeMath for uint256;
 
+
     event Transaction (address operator, address from, address to, uint256 amount, bytes msg1, bytes msg2);
     struct Balance{
         address dacAddress;
@@ -17,10 +18,9 @@ interface IMetis {
 
     /**
      * @dev commit funds to the contract. participants can keep committing after the pledge ammount is reached
-     * @param amount amount of fund to commit
      * The sender must authorized this contract to be the operator of senders account before committing
      */
-    function stake(address dacAddr, address sender) external payable; 
+    function stake(address sender) external payable; 
 
     /**
      * @dev dispense unlocked the token to the recipient
@@ -29,18 +29,11 @@ interface IMetis {
      */
     function dispense(address recipient, uint256 amount) external;
 
-    /**
-     * @dev transfer pledge value from one participant to another
-     * @param to target address
-     * @param amount amount of fund to transfer
-     * The sender must have enough fund pledged. The method does not trigger status changes.
-     * The transaction is not allowed if the contract is in the middle of a dispute.
-     */
-    function send(address to, uint256 amount) external;
+    function newTransaction(address sender) external payable;
 
-    /**
-     * @dev withdraw the pledged fund
-     * The sender must have enough fund pledged. Contract will be closed if all funds are withdrawn
-     */
-    function withdraw() external;
+    function getNumTokens(address dacAddr) external view returns (uint256);
+    function lockRatioOf(address dacAddr) external view returns (uint ratio);
+    function getTokenAddr() external view returns (address);
+    function getTaxRate() external view returns (uint256);
+    function getBalance(address dacAddr) external view returns (uint256);
 }

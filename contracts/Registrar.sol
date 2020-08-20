@@ -20,6 +20,7 @@ contract Registrar is Ownable{
     mapping (address => STATUS) public _dacList;
     mapping (string => bool) public _nameList;
     address[] _dacArray;
+    address _metis;
 
     constructor() public {
     }
@@ -33,9 +34,7 @@ contract Registrar is Ownable{
     function createDAC (address owner, string memory name, string memory symbol, uint256 stake, address business) public  {
 
         require(msg.sender == _metis, "only metis can create DAC");
-        require(name.length < 100, "Name is too long");
-        require(symbol.length < 5, "Symbol is too long");
-        require(_nameList[name] == 0, "The name is already taken");
+        require(_nameList[name] == false, "The name is already taken");
         
         _nameList[name] = true;
 
@@ -51,11 +50,11 @@ contract Registrar is Ownable{
     }
     
     /// take the task
-    function migrateDAC (address dacAddr) public {
+    function migrateDAC (address payable dacAddr) public {
         require(msg.sender == _metis, "only the current metis can call this method");
         require(isActive(dacAddr), "This DAC is not active");
 
-        DAC(dacAddr).setMetis = _metis;
+        DAC(dacAddr).setMetis(_metis);
     }
 
     /// take the task
@@ -63,7 +62,7 @@ contract Registrar is Ownable{
         require(msg.sender == _metis, "only the current metis can call this method");
         require(isActive(dacAddr), "This DAC is not active");
 
-        _dacList(dacAddr).setMetis = _metis;
+        _dacList[dacAddr] = STATUS.CLOSED;
     }
 
     function getLastDAC() view public returns(address) {

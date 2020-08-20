@@ -9,7 +9,7 @@ import "./IDAC.sol";
 /**
  * @dev implementation of MSC
  */
-contract MSC is Ownable {
+contract MSCMulti is Ownable {
     using SafeMath for uint256;
 
     using Roles for Roles.Role;
@@ -34,15 +34,13 @@ contract MSC is Ownable {
     address private _tokenAddr; //token contract address
     uint private lastStatusChange;
     uint private disputeRollBackDays;
-
     uint private numCommitted;
-    uint private numWithdraws;
     uint private numWantedout;
-
     uint256 public pledgeAmount;
     uint256 public _prizeAmount;
     uint256 public _afterTax; //afterTax value of the current transaction.
     uint public disputePeriod;
+    uint public numWithdraws;
     address public disputeInitiator;
     address payable public facilitator;
     address public _dacAddr; // address to the dac
@@ -51,16 +49,18 @@ contract MSC is Ownable {
 
     mapping(address => Pledge) public parties;
     mapping(address => bool) public withdraworder;
+    address[] public participantsArray;
 
     /**
      * @dev participants cannot be empty
+     * @param participants list of participants
      * @param facilitator_param address of the facilitator, who can resolve disputes. must be payable
      * @param period period in days of time one can raise disputes after a participant requests the exit
      * @param tokenAddr token contract address
      */
     constructor(
         address starter,
-	    address taker,
+	    address[] memory participants,
 	    address payable facilitator_param,
         uint period,
         address tokenAddr,
@@ -72,11 +72,10 @@ contract MSC is Ownable {
     {
         _participants.add(starter);
         _starter = starter;
-	    if (taker != address(0)) {
-            _participants.add(taker);
-            _taker = taker;
+        participantsArray = participants;
+        for (uint256 i = 0; i < participants.length; ++i) {
+	        _participants.add(participants[i]);
         }
-
 	    facilitator = facilitator_param;
         _tokenAddr = tokenAddr;
         pledgeAmount = stakeAmount;
@@ -89,11 +88,11 @@ contract MSC is Ownable {
      * @dev add a participant. only possible when the contract is still in pending state
      * @param p the participant
      */
-    function assignTaker(address p) public onlyOwner {
+    function addParticipant(address p) public onlyOwner {
         require(contractStatus < ContractStatus.Effective, "STATUS_IS_NOT_PENDING");
-        require(!(_participants.has(p)), "Already a participant");
+        require(!(_participants.has(msg.sender)), "Already a participant");
 	    _participants.add(p);
-        _taker = p;
+        participantsArray.push(p);
     }
 
     /**
@@ -113,7 +112,7 @@ contract MSC is Ownable {
         if (from != _starter && p.value >= threshold && p.status == ParticipantStatus.Pending) {
                 p.status = ParticipantStatus.Committed;
                 numCommitted++;
-                if (numCommitted == 2) {
+                if (numCommitted == participantsArray.length) {
                         contractStatus = ContractStatus.Effective;
                 } else {
                     contractStatus = ContractStatus.SemiCommitted;
@@ -180,8 +179,7 @@ contract MSC is Ownable {
         lastStatusChange = now;
         numWithdraws++;
 
-        IDAC(_dacAddr).newTransaction.value(p.value)(_starter, _taker, 1);
-        // _afterTax was refreshed when metis send the eth back.
+        IDAC(_dacAddr).newTransaction.value(p.value)(_starter, msg.sender, 1);
         uint256 valueToSend = _afterTax;
 
         p.value = 0;
@@ -190,7 +188,7 @@ contract MSC is Ownable {
         // indicate withdraw order is initiated. otherwise, the send will be blocked
         withdraworder[msg.sender] = true;
 
-        if ( numWithdraws == 2 ) {
+        if ( numWithdraws == participantsArray.length ) {
                 contractStatus = ContractStatus.Closed;
                 selfdestruct(facilitator);
         }
@@ -216,7 +214,7 @@ contract MSC is Ownable {
                 numWantedout++;
                 lastStatusChange = now;
         }
-        if (numWantedout == 2) {
+        if (numWantedout == participantsArray.length) {
                 contractStatus = ContractStatus.Completed;
                 emit ContractClose(msg.sender, lastStatusChange, numWantedout, "All Agreed");
         } else if (now >= lastStatusChange + disputePeriod * 1 days && contractStatus != ContractStatus.Dispute) {

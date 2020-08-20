@@ -56,7 +56,9 @@ interface IMSC {
      */
     function dispute() external;
 
-    /**                                                                                                                                                                                                                                                                                          * @dev request a facilitator to resolve the dispute                                                                                                                                                                                                                                         */                                                                                                                                                                                                                                                                                         function resolutionRequest() external;
+    /**
+     * @dev request a facilitator to resolve the dispute*/
+    function resolutionRequest() external;
     /** 
      * @dev cancel a dispute
      * the method also reset the status change. the original dispute period continues.

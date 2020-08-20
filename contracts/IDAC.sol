@@ -14,32 +14,6 @@ import "./TaskList.sol";
 interface IDAC {
     using SafeMath for uint256;
 
-    IMetis private _metis;
-    TaskList public _taskList;
-
-    using Roles for Roles.Role;
-    enum DACStatus { Pending, Effective, Closed }
-    enum MemberStatus { Active, Blocked }
-
-    event Transaction (address operator, address from, address to, uint256 amount, bytes msg1, bytes msg2);
-    
-    Roles.Role private _adminRole;
-
-    struct Profile {
-        uint256 reputation; 
-        uint256 locked;
-        uint256 unlocked;
-        uint256 lastUnlockStage;
-        uint256 lastUpdateTS;
-        uint256 numComplaintsReceived;
-        uint256 numFinishedTasks;
-    }
-
-    mapping(address => Profile) public _members;
-    address[] public _memberArray;
-    uint256 public _dividendPool;
-    uint256 public _totalRep = 0;
-
     /**
      * @dev commit funds to the dac. 
      & @param sender address of sender
@@ -49,7 +23,7 @@ interface IDAC {
     /**
      * @dev return the current balance of the sender
      */
-    function balance() external view returns (uint256 locked, uint256 unlocked); 
+    function getBalance() external view returns (uint256 locked, uint256 unlocked); 
 
     function updateReputation(address member) external;
 
@@ -71,7 +45,7 @@ interface IDAC {
      * @param taskTaker address
      * @param transType 0 if staking or 1 if paying
      */
-    function newTransaction(address taskOwner, address taskTaker, uint transType) external;
+    function newTransaction(address taskOwner, address taskTaker, uint transType) external payable;
 
     /**
      * @dev distribute dividends
@@ -83,9 +57,10 @@ interface IDAC {
      */
     function updateAllBalances() external;
 
-    function createTask(string memory infourl, uint256 expiry, uint256 prize, uint256 stakereq) external;
+    function createTask(string calldata infourl, uint256 expiry, uint256 prize, uint256 stakereq) external;
 
     function takeTask(address taskOwner, uint index) external;
 
     function getTaxRate() external view returns (uint256);
+    function getCreator() external view returns (address);
 }
