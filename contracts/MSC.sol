@@ -136,10 +136,6 @@ contract MSC is Ownable {
     }
 
     function() external payable {
-        // this means we have the after tax ether value
-        if (msg.sender == _dacAddr) {
-            _afterTax = msg.value;
-        }
     }
 
     /**
@@ -180,9 +176,8 @@ contract MSC is Ownable {
         lastStatusChange = now;
         numWithdraws++;
 
-        IDAC(_dacAddr).newTransaction.value(p.value)(_starter, _taker, 1);
+        uint256 valueToSend = IDAC(_dacAddr).newTransaction.value(p.value)(_starter, _taker, 1);
         // _afterTax was refreshed when metis send the eth back.
-        uint256 valueToSend = _afterTax;
 
         p.value = 0;
         msg.sender.transfer(valueToSend);

@@ -45,7 +45,7 @@ interface IDAC {
      * @param taskTaker address
      * @param transType 0 if staking or 1 if paying
      */
-    function newTransaction(address taskOwner, address taskTaker, uint transType) external payable;
+    function newTransaction(address taskOwner, address taskTaker, uint transType) external payable returns (uint256);
 
     /**
      * @dev distribute dividends

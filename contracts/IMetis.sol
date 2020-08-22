@@ -20,7 +20,7 @@ interface IMetis {
      * @dev commit funds to the contract. participants can keep committing after the pledge ammount is reached
      * The sender must authorized this contract to be the operator of senders account before committing
      */
-    function stake(address sender) external payable; 
+    function stake(address sender) external payable returns(uint256); 
 
     /**
      * @dev dispense unlocked the token to the recipient
@@ -29,7 +29,7 @@ interface IMetis {
      */
     function dispense(address recipient, uint256 amount) external;
 
-    function newTransaction(address sender) external payable;
+    function newTransaction(address sender) external payable returns(uint256, uint256);
 
     function getNumTokens(address dacAddr) external view returns (uint256);
     function lockRatioOf(address dacAddr) external view returns (uint ratio);

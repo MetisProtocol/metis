@@ -42,8 +42,7 @@ contract Metis is IMetis, Ownable{
         _tokenAddr = tokenAddr;
         _registrarAddr = registrarAddr;
         _registrar = IRegistrar(_registrarAddr);
-        _registrar.createDAC(msg.sender, "_GENESIS", "OG", 0, address(0)); 
-        _genesisDac = _registrar.getLastDAC();
+        _genesisDac = _registrar.createDAC(msg.sender, "_GENESIS", "OG", 0, address(0)); 
         _token = MToken(_tokenAddr);
         emit Transaction (msg.sender, msg.sender, _genesisDac, 0, "Genesis","Create");
     }
@@ -54,25 +53,25 @@ contract Metis is IMetis, Ownable{
 
     function createDAC(string memory name, string memory symbol, address business) public payable {
         require (business != address(0), "0 address not supported");
-        _registrar.createDAC(msg.sender, name, symbol, msg.value, business); 
-        address dacAddr = _registrar.getLastDAC();
+        address dacAddr = _registrar.createDAC(msg.sender, name, symbol, msg.value, business); 
         _stake(msg.sender, dacAddr, msg.value);
+        emit Transaction (msg.sender, msg.sender, dacAddr, msg.value, "DAC", "NEW");
     }
 
-    function stake(address sender) public payable {
-        _stake(sender, msg.sender, msg.value);
+    function stake(address sender) public payable returns (uint256){
+        return _stake(sender, msg.sender, msg.value);
     }
     /**
      * @dev commit funds to the contract. participants can keep committing after the pledge ammount is reached
      * The sender must authorized this contract to be the operator of senders account before committing
      */
-    function _stake(address sender, address dacAddr, uint256 value) private {
+    function _stake(address sender, address dacAddr, uint256 value) private returns(uint256 tokenMinted){
         require(isDacRegistered(dacAddr), "Invalid DAC");
 
         _eths[_genesisDac].add(value);
         _eths[dacAddr].add(value);
 
-        uint256 tokenMinted = MathHelper.mulDiv(value, 10^18, _curPrice); //value * 10^18 / curPrice
+        tokenMinted = MathHelper.mulDiv(value, 10^18, _curPrice); //value * 10^18 / curPrice
         uint256 tokenLocked = MathHelper.mulDiv(tokenMinted, lockRatioOf(dacAddr), 100);
 
         //mint the token
@@ -134,19 +133,19 @@ contract Metis is IMetis, Ownable{
     /**
      * @dev process the transaction fee
      */
-    function newTransaction(address sender) public payable {
+    function newTransaction(address sender) public payable returns (uint256 numTokens, uint256 afterTax){
         uint256 value = msg.value;
         uint256 tax = MathHelper.mulDiv(value, _taxRate, 100);
         address dacAddr = msg.sender;
-        uint256 ethDac = _eths[dacAddr];
 
         require(isDacRegistered(dacAddr), "Invalid DAC");
         
-        uint256 numTokens = MathHelper.mulDiv(value.sub(tax), 10^18, _curPrice);
+        numTokens = MathHelper.mulDiv(value.sub(tax), 10^18, _curPrice);
         _token.mint(dacAddr, numTokens);
-        ethDac = ethDac.add(value.sub(tax));
 
-        msg.sender.transfer(value.sub(tax));
+        afterTax = value.sub(tax);
+
+        msg.sender.transfer(afterTax);
 
         emit Transaction(dacAddr, sender, _genesisDac, tax, "TAX Deposited", "ETH");
         emit Transaction(dacAddr, sender, _genesisDac, numTokens, "TAX Token Minted", "MToken");

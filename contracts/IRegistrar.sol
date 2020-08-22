@@ -9,7 +9,7 @@ interface IRegistrar {
 
     function setMetisAddr(address metis) external;
 
-    function createDAC (address owner, string calldata name, string calldata symbol, uint256 stake, address business) external;
+    function createDAC (address owner, string calldata name, string calldata symbol, uint256 stake, address business) external returns(address);
     function isActive(address dacAddr) external view returns(bool);
     
     function migrateDAC (address dacAddr) external;

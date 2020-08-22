@@ -85,11 +85,7 @@ contract DAC is IDAC, Ownable{
     function stake(address sender) public payable{
         Profile storage p = _members[sender];
 
-        uint256 preNumTokens = _metis.getNumTokens(address(this));
-
-        _metis.stake.value(msg.value)(sender);
-
-        uint256 newNumTokens = _metis.getNumTokens(address(this)).sub(preNumTokens);
+        uint256 newNumTokens = _metis.stake.value(msg.value)(sender);
 
         if (p.lastUpdateTS == 0) {
             // new memeber
@@ -170,14 +166,10 @@ contract DAC is IDAC, Ownable{
      * @dev tax and dividents from transactions
      * @param transType 0 if staking or 1 if paying
      */
-    function newTransaction(address taskOwner, address taskTaker, uint transType) public payable {
-        uint256 preNumTokens = _metis.getNumTokens(address(this));
-        uint256 preEthDac = _metis.getBalance(address(this));
+    function newTransaction(address taskOwner, address taskTaker, uint transType) public payable returns(uint256 newValue){
+        uint256 newNumTokens;
 
-        _metis.newTransaction.value(msg.value)(msg.sender);
-
-        uint256 newNumTokens = _metis.getNumTokens(address(this)).sub(preNumTokens);
-        uint256 newValue = _metis.getBalance(address(this)).sub(preEthDac);
+        (newNumTokens, newValue) = _metis.newTransaction.value(msg.value)(msg.sender);
 
         msg.sender.transfer(newValue);
 

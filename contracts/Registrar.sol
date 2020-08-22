@@ -31,7 +31,7 @@ contract Registrar is Ownable{
 
     /// add a new task to the list
     /// pass address(0) in delegate to open the task for all
-    function createDAC (address owner, string memory name, string memory symbol, uint256 stake, address business) public  {
+    function createDAC (address owner, string memory name, string memory symbol, uint256 stake, address business) public   returns (address newDac){
 
         require(msg.sender == _metis, "only metis can create DAC");
         require(_nameList[name] == false, "The name is already taken");
@@ -39,11 +39,11 @@ contract Registrar is Ownable{
         _nameList[name] = true;
 
         //deploy MSC
-        address newDac = address(new DAC(owner, _metis, name, symbol, stake, business));
+        newDac = address(new DAC(owner, _metis, name, symbol, stake, business));
         _dacList[newDac] = STATUS.ACTIVE;
         _dacArray.push(newDac);   
 
-        emit NewDAC(owner, newDac );
+        emit NewDAC(owner, newDac);
     }
     function isActive(address dacAddr) view public returns(bool){
         return _dacList[dacAddr] == STATUS.ACTIVE;
