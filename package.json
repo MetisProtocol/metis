@@ -23,7 +23,8 @@
     "truffle-hdwallet-provider": "^1.0.17"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "env": "npx ganache-cli --deterministic & > /dev/null"
   },
   "repository": {
     "type": "git",
