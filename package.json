@@ -4,6 +4,9 @@
   "description": "metis project",
   "main": "index.js",
   "dependencies": {
+    "@eth-optimism/ovm-truffle-provider-wrapper": "0.0.1-alpha.27",
+    "@eth-optimism/rollup-full-node": "0.0.1-alpha.29",
+    "@eth-optimism/solc-transpiler": "0.0.1-alpha.28",
     "@openzeppelin/contract-loader": "^0.6.1",
     "@openzeppelin/contracts": "^2.5.1",
     "@uniswap/v2-core": "^1.0.1",

@@ -190,7 +190,7 @@ contract MSCMulti is Ownable {
 
         if ( numWithdraws == participantsArray.length ) {
                 contractStatus = ContractStatus.Closed;
-                selfdestruct(facilitator);
+                //selfdestruct(facilitator);
         }
     }
    

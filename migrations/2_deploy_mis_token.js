@@ -18,6 +18,6 @@ module.exports = async function(deployer, network, accounts) {
       //await deployer.deploy(MSC, [accounts[1], accounts[2]], accounts[0], 1, token.address, 10000);
       //await deployer.deploy(MULTI, [accounts[0], accounts[1]], token.address);
   } else {
-      await deployer.deploy(MIS, amount, [accounts[0]]);
+      await deployer.deploy(MIS, []);
   }
 };

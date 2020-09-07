@@ -187,7 +187,7 @@ contract MSC is Ownable {
 
         if ( numWithdraws == 2 ) {
                 contractStatus = ContractStatus.Closed;
-                selfdestruct(facilitator);
+                //selfdestruct(facilitator);
         }
     }
    
