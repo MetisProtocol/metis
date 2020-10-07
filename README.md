@@ -1,6 +1,6 @@
 # Metis(WIP)
 
-Metis Protocol is a governance and collaboration framework for DAOs, it integrates the governance mechanism (Layer 1) and collaboration framework (Layer 2) to upgrade and empower DApps (DAOs) to better govern their community.
+Metis Protocol is a synergy of governance mechanism (Layer 1) and collaboration framework (Layer 2) to upgrade and empower DApps (DAOs) to better govern their community.
 
 # Features
 1. Leverage Staking and Pullback as the foundation of the governance mechanism
