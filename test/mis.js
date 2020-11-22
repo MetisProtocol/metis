@@ -32,6 +32,16 @@ contract("MToken Test", async accounts => {
                 await token.signMint(pos, {from: accounts[2]});
                 assert.equal(await token.balanceOf.call(accounts[1]), 100000, "Account 1 should still have 100000 balance");
         });
+        it("mintbymetis", async() => {
+                let token = await MIS.deployed();
+                await token.addMetis(accounts[0]);
+
+                assert.equal(await token.balanceOf.call(accounts[2]), 0, "Account 1 should still have 0 balance");
+                await token.mint(accounts[2], 100000, {from: accounts[0]});
+                assert.equal(await token.balanceOf.call(accounts[2]), 100000, "Account 1 should still have 100000 balance");
+                await token.removeMetis(accounts[0]);
+                await catchRevert(token.mint(accounts[2], 100000, {from: accounts[0]}));
+        });
 
         it("mint2", async() => {
                 let token = await MIS.deployed();

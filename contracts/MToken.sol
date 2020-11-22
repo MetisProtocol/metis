@@ -49,7 +49,7 @@ contract MToken is ERC20, ERC20Detailed, Ownable {
     }
 
     function mint(address target, uint256 amount) external {
-        require(_metis.has(msg.sender), "NO_METIS");
+        require(_metis.has(msg.sender), "ONLY_METIS_ALLOWED_TO_DO_THIS");
         _mint(target, amount);
     }
     function addMinter(address minter) external onlyOwner {

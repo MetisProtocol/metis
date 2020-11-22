@@ -127,7 +127,7 @@ contract MSC is Ownable {
      * @param amount amount of fund to commit
      * The sender must authorized this contract to be the operator of senders account before committing
      */
-    function commit(uint256 amount, address sender) public payable{
+    function commit(uint256 amount, address sender) public {
         // Only participants are allowed
         require(amount > 0, "AMOUNT_NOT_GREATER_THAN_ZERO");
         require(_participants.has(sender), "DOES_NOT_HAVE_PARTICIPANT_ROLE");

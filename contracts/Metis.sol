@@ -51,11 +51,12 @@ contract Metis is IMetis, Ownable{
         return _registrar.isActive(dac);
     }
 
-    function createDAC(string memory name, string memory symbol, address business) public payable {
+    function createDAC(string memory name, string memory symbol, address business, uint256 stake) public {
         require (business != address(0), "0 address not supported");
-        address dacAddr = _registrar.createDAC(msg.sender, name, symbol, msg.value, business); 
-        _stake(msg.sender, dacAddr, msg.value);
-        emit Transaction (msg.sender, msg.sender, dacAddr, msg.value, "DAC", "NEW");
+        //require (_token.transferFrom(msg.sender, stake), "Stake transfer failed");
+        address dacAddr = _registrar.createDAC(msg.sender, name, symbol, stake, business); 
+        //_stake(msg.sender, dacAddr, stake);
+        emit Transaction (msg.sender, msg.sender, dacAddr, stake, "DAC", "NEW");
     }
 
     function stake(address sender) public payable returns (uint256){

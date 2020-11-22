@@ -1,1 +1,1 @@
-truffle-config-ovm.js
+truffle-config-normal.js
