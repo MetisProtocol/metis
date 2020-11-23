@@ -1,6 +1,6 @@
 const MIS = artifacts.require("MToken");
 //const METIS = artifacts.require("MetisToken");
-const MSC = artifacts.require("MSC");
+const MULTI = artifacts.require("MultiSigMinter");
 require('@openzeppelin/test-helpers/configure')({ provider: web3.currentProvider, environment: 'truffle' });
 
 const { singletons } = require('@openzeppelin/test-helpers');
@@ -13,13 +13,17 @@ module.exports = async function(deployer, network, accounts) {
   }
 
   if (network === 'development') {
-      await deployer.deploy(MIS, [accounts[0], accounts[1]]);
+      await deployer.deploy(MIS, []);
       const token = await MIS.deployed();
       //const token2 = await METIS.deployed(0, [accounts[0], accounts[1]], [accounts[0], accounts[1]],[accounts[0]]);
-      //await deployer.deploy(MSC, [accounts[1], accounts[2]], accounts[0], 1, token.address, 10000);
+      await deployer.deploy(MULTI, [accounts[0], accounts[1]],token.address);
+      const minter = await MULTI.deployed();
+      token.addMinter(minter.address);
   } else {
-//      await singletons.ERC1820Registry(accounts[0]);
-      await deployer.deploy(MIS, ['0x7532C59C69828D4e756832BaE27b79FB28145C44']);
-      //await deployer.deploy(METIS, 0, [accounts[0], accounts[1]], [accounts[0], accounts[1]],[accounts[0]]);
+      await deployer.deploy(MIS, []);
+      const token = await MIS.deployed();
+      await deployer.deploy(MULTI, [],token.address);
+      const minter = await MULTI.deployed();
+      token.addMinter(minter.address);
   }
 };
