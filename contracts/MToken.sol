@@ -14,7 +14,7 @@ contract MToken is ERC20, ERC20Detailed, Ownable {
     constructor(
      	address[] memory minters
     )
-       ERC20Detailed("METIS Token", "METIS", 18)
+       ERC20Detailed("Metis Token", "Metis", 18)
        public
     {
         for (uint256 i = 0; i < minters.length; ++i) {
