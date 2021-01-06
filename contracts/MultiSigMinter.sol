@@ -3,7 +3,7 @@ pragma solidity ^0.5.0;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/ownership/Ownable.sol";
 import "@openzeppelin/contracts/access/Roles.sol";
-import "./MToken.sol";
+import "./IMToken.sol";
 
 contract MultiSigMinter is Ownable {
     using Roles for Roles.Role;
@@ -24,7 +24,7 @@ contract MultiSigMinter is Ownable {
 
     Proposal[] public proposals;
     address[] minters_;
-    MToken token_;
+    IMToken token_;
 
     constructor(
      	address[] memory minters,
@@ -36,7 +36,7 @@ contract MultiSigMinter is Ownable {
 	    _minters.add(minters[i]);
         }
         minters_ = minters;
-        token_ = MToken(token);
+        token_ = IMToken(token);
     }
 
     function addMinter(address minter) external onlyOwner {

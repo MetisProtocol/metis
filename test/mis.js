@@ -41,6 +41,7 @@ contract("MToken Test", async accounts => {
                 assert.equal(await token.balanceOf.call(accounts[2]), 0, "Account 1 should still have 0 balance");
                 await token.mint(accounts[2], 100000, {from: accounts[0]});
                 assert.equal(await token.balanceOf.call(accounts[2]), 100000, "Account 1 should still have 100000 balance");
+                await catchRevert(token.mint(accounts[2], 1000000, {from: accounts[0]}));
                 await token.removeMinter(accounts[0]);
                 await catchRevert(token.mint(accounts[2], 100000, {from: accounts[0]}));
         });

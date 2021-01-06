@@ -54,9 +54,9 @@ module.exports = {
     main: {
        provider: () => new HDWalletProvider(mnemonic, "https://mainnet.infura.io/v3/" + infuraKey),
        network_id: 1,       // mainnet
-       gasPrice: web3.utils.toWei('10', 'gwei'), 
+       gasPrice: web3.utils.toWei('55', 'gwei'), 
        confirmations: 2,    // # of confs to wait between deployments. (default: 0)
-       timeoutBlocks: 200,  // # of blocks before a deployment times out  (minimum/default: 50)
+       timeoutBlocks: 1000,  // # of blocks before a deployment times out  (minimum/default: 50)
        skipDryRun: false    // Skip dry run before migrations? (default: false for public nets )
      },
     // Another network with more advanced options...
@@ -106,5 +106,6 @@ module.exports = {
       //  evmVersion: "byzantium"
       // }
     }
-  }
+  },
+  plugins: ['oneclick']
 }

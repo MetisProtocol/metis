@@ -1,5 +1,9 @@
 build/
 node_modules/
+backup/
 .openzeppelin/.session
+accounts.in
+addresses.txt
+newaccount
 .secret
 .env

@@ -3,16 +3,21 @@ pragma solidity ^0.5.0;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
 import "@openzeppelin/contracts/ownership/Ownable.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Roles.sol";
 
 contract MToken is ERC20, ERC20Detailed, Ownable {
     using Roles for Roles.Role;
 
     Roles.Role private _minters;
+    using SafeMath for uint256;
+
     address[] minters_;
+    uint256 maxSupply_;
 
     constructor(
-     	address[] memory minters
+     	address[] memory minters,
+        uint256 maxSupply
     )
        ERC20Detailed("Metis Token", "Metis", 18)
        public
@@ -21,10 +26,12 @@ contract MToken is ERC20, ERC20Detailed, Ownable {
 	    _minters.add(minters[i]);
         }
         minters_ = minters;
+        maxSupply_ = maxSupply;
     }
 
     function mint(address target, uint256 amount) external {
         require(_minters.has(msg.sender), "ONLY_MINTER_ALLOWED_TO_DO_THIS");
+        require(SafeMath.add(totalSupply(), amount) <= maxSupply_, "EXCEEDING_MAX_SUPPLY");
         _mint(target, amount);
     }
 
