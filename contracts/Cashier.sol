@@ -40,8 +40,12 @@ contract Cashier is Ownable {
     }
 
     function withdraw(address payable target) external onlyOwner {
-        require(token_.transfer(target, totalToken_), "token transfer failed");
-        (bool success, ) = target.call.value(totalEther_)('');
+        uint amounta = totalToken_;
+        uint amountb = totalEther_;
+        totalToken_ = 0;
+        totalEther_ = 0;
+        require(token_.transfer(target, amounta), "token transfer failed");
+        (bool success, ) = target.call.value(amountb)('');
         require(success, "ether tranfer failed");
     }
 
