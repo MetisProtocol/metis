@@ -44,12 +44,10 @@ module.exports = {
 
   networks: {
             test: {
-                           network_id: 108,
-                           provider: function() {
-                                               return ProviderWrapper.wrapProviderAndStartLocalNode(new HDWalletProvider(mnemonic, "http://127.0.0.1:8545/", 0, 10));
-                                       },
-                        gasPrice: 0,
-                        gas: 9000000,
+                host: "127.0.0.1",
+                                        port: 8545,
+                                        network_id: "420", // match any network
+                                        gasPrice: 0,
                         },
               live: {
                              network_id: 108,
