@@ -84,4 +84,36 @@ contract("Vault Test", async accounts => {
                 assert.equal(await token.balanceOf.call(accounts[3]), 1000, "Accounts 3 should have 1000 balance");
 
         });
+
+        it("addNewPendings", async() => {
+                let token = await MIS.deployed();
+                let vault = await VAULT.deployed();
+
+                assert.equal(await token.balanceOf.call(accounts[4]), 0, "Account 1 should still have 0 balance");
+                let date = (new Date()).getTime();
+                let timestamp = Math.floor(date / 1000);
+                await vault.addNewPendings([accounts[4],accounts[4],accounts[5]], [1000,20,30]);
+
+                assert.equal(await vault.checkArrangement(0, {from:accounts[4]}), "Amount:1000 Available on TS 0 LOCKED");
+                assert.equal(await vault.checkArrangement(1, {from:accounts[4]}), "Amount:20 Available on TS 0 LOCKED");
+
+                assert.equal(await vault.checkArrangement(0, {from:accounts[5]}), "Amount:30 Available on TS 0 LOCKED");
+
+                await vault.addNewPendings([accounts[4],accounts[4],accounts[5]], [1000,20,30]);
+
+                assert.equal(await vault.checkArrangement(2, {from:accounts[4]}), "Amount:1000 Available on TS 0 LOCKED");
+                assert.equal(await vault.checkArrangement(3, {from:accounts[4]}), "Amount:20 Available on TS 0 LOCKED");
+                assert.equal(await vault.checkArrangement(1, {from:accounts[5]}), "Amount:30 Available on TS 0 LOCKED");
+
+                await vault.setDates([accounts[4], accounts[5], accounts[4]], [1, 1, 0], [timestamp, timestamp, timestamp]);
+                assert.equal(await vault.checkArrangement(0, {from:accounts[4]}), "Amount:1000 Available on TS " + (timestamp) + " ARRANGED");
+                assert.equal(await vault.checkArrangement(1, {from:accounts[4]}), "Amount:20 Available on TS " + (timestamp) + " ARRANGED");
+                assert.equal(await vault.checkArrangement(2, {from:accounts[4]}), "Amount:1000 Available on TS 0 LOCKED");
+                assert.equal(await vault.checkArrangement(3, {from:accounts[4]}), "Amount:20 Available on TS 0 LOCKED");
+            
+                assert.equal(await vault.checkArrangement(0, {from:accounts[5]}), "Amount:30 Available on TS 0 LOCKED");
+
+                assert.equal(await vault.checkArrangement(1, {from:accounts[5]}), "Amount:30 Available on TS " + (timestamp) + " ARRANGED");
+
+        });
 });

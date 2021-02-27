@@ -9,7 +9,7 @@ contract TokenVault is Ownable {
     IERC20 token_;
     using SafeMath for uint256;
     enum STATUS {undefined, ARRANGED, PAID}
-    event NEW(address target, uint256 amount, uint256 timestamp);
+    event NEW(address target, uint index, uint256 amount, uint256 timestamp);
     event DATED(address target, uint index, uint256 timestamp);
     event CLAIM(address operator, uint256 amount);
 
@@ -36,7 +36,7 @@ contract TokenVault is Ownable {
         a.timestamp = timestamp;
         a.aStatus = STATUS.ARRANGED;
         alist.push(a);
-        emit NEW(target, amount, timestamp);
+        emit NEW(target, alist.length - 1, amount, timestamp);
     }
 
     function addNewPending(address target, uint256 amount) external onlyOwner {
@@ -45,7 +45,22 @@ contract TokenVault is Ownable {
         a.amount = amount;
         a.aStatus = STATUS.undefined;
         alist.push(a);
-        emit NEW(target, amount, 0);
+        emit NEW(target, alist.length - 1, amount, 0);
+    }
+
+    function addNewPendings(address[] calldata targets, uint256[] calldata amounts) external onlyOwner {
+        require(targets.length == amounts.length, "amount length mistmatch");
+
+        for (uint i = 0; i < targets.length; ++i) {
+            address target = targets[i];
+            uint256 amount = amounts[i];
+            ARRANGEMENT[] storage alist = arrangements_[target];
+            ARRANGEMENT memory a;
+            a.amount = amount;
+            a.aStatus = STATUS.undefined;
+            alist.push(a);
+            emit NEW(target, alist.length - 1, amount, 0);
+        }
     }
 
     function setDate(address target, uint index, uint256 timestamp) external onlyOwner {
@@ -56,6 +71,23 @@ contract TokenVault is Ownable {
         a.timestamp = timestamp;
         a.aStatus = STATUS.ARRANGED;
         emit DATED(target, index, timestamp);
+    }
+
+    function setDates(address[] calldata targets, uint[] calldata indexs, uint256[] calldata timestamps) external onlyOwner {
+        require(targets.length == indexs.length, "index length mismatch");
+        require(targets.length == timestamps.length, "timestamp length mismatch");
+
+        for (uint i = 0; i < targets.length; ++i) {
+            uint index = indexs[i];
+            address target = targets[i];
+            uint256 timestamp = timestamps[i];
+            require(index < arrangements_[target].length, "invalid index");
+            ARRANGEMENT[] storage alist = arrangements_[target];
+            ARRANGEMENT storage a = alist[index];
+            a.timestamp = timestamp;
+            a.aStatus = STATUS.ARRANGED;
+            emit DATED(target, index, timestamp);
+        }
     }
 
     function claim() external {
@@ -85,6 +117,22 @@ contract TokenVault is Ownable {
             return string(abi.encodePacked("Amount:", uint2str(a.amount), " Available on TS ", uint2str(a.timestamp), " LOCKED"));
         }
      }
+
+    function checkArrangements() external view returns (string memory result){
+        for(uint index = 0; index < arrangements_[msg.sender].length; ++index) {
+            ARRANGEMENT memory a = arrangements_[msg.sender][index];
+            string memory cur;
+            if (a.aStatus == STATUS.PAID) {
+                cur = string(abi.encodePacked("Amount:", uint2str(a.amount), " Available on TS ", uint2str(a.timestamp), " PAID"));
+            } else if (a.aStatus == STATUS.ARRANGED) {
+                cur = string(abi.encodePacked("Amount:", uint2str(a.amount), " Available on TS ", uint2str(a.timestamp), " ARRANGED"));
+            } else {
+                cur = string(abi.encodePacked("Amount:", uint2str(a.amount), " Available on TS ", uint2str(a.timestamp), " LOCKED"));
+            }
+            result = string(abi.encodePacked(result, "\n", cur));
+        }
+     }
+
      function uint2str(uint _i) internal pure returns (string memory _uintAsString) {
          if (_i == 0) {
              return "0";
