@@ -69,7 +69,6 @@ contract MSC is IMSC {
         _token = IERC20(tokenAddr);
         pledgeAmount = amount;
         disputePeriod = period;
-        _erc1820.setInterfaceImplementer(address(this), TOKENS_RECIPIENT_INTERFACE_HASH, address(this));
     }
 
     /**
