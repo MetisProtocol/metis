@@ -26,6 +26,8 @@ const infuraKey = process.env.INFURAKEY;
 
 const fs = require('fs');
 const mnemonic = fs.readFileSync(".secret").toString().trim();
+const gasapi = "https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=YourApiKeyToken";
+
 
 module.exports = {
   /**
@@ -55,9 +57,10 @@ module.exports = {
     main: {
        provider: () => new HDWalletProvider(mnemonic, "https://mainnet.infura.io/v3/" + infuraKey),
        network_id: 1,       // mainnet
-       gasPrice: web3.utils.toWei('55', 'gwei'), 
+       gasPrice: web3.utils.toWei('115', 'gwei'), 
        confirmations: 2,    // # of confs to wait between deployments. (default: 0)
        timeoutBlocks: 1000,  // # of blocks before a deployment times out  (minimum/default: 50)
+       networkCheckTimeout: 5000,
        skipDryRun: false    // Skip dry run before migrations? (default: false for public nets )
      },
     // Another network with more advanced options...

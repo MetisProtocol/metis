@@ -1,6 +1,7 @@
 build/
 node_modules/
 backup/
+scripts/investors
 .openzeppelin/.session
 accounts.in
 addresses.txt
