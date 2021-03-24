@@ -1,46 +1,25 @@
 # Metis(WIP)
 
-Metis Protocol is a synergy of governance mechanism (Layer 1) and collaboration framework (Layer 2) to upgrade and empower DApps (DAOs) to better govern their community.
+Metis is a Layer2 DAO protocol, devoting to build up a technical and organizational infrastructure to run Web3 economy. 
+ 
+With Metis, every individual, community, builders or projects can take the benefits of low gas cost, high scalability, rich functionalities, and easy-of-use UX/UI, to create their decentralized company (DAC, a subset of DAO) on the blockchain, launch decentralized applications (DApps), and manage the business operations via the DAC structure in a decentralized way. 
+ 
+To achieve sophisticated collaborative outcomes and successfully deploy a framework that involves many on-chain operations requiring timely responses, a layer 2 solution is needed for Metis to achieve its mission. 
+ 
+Currently, here are some significant issues with many popular optimistic rollup layer 2 solutions:
 
-# Features
-1. Leverage Staking and Pullback as the foundation of the governance mechanism
-- Staking: commitment of the collaborators to perform as their promise
-- Pullback mechanism: punish the collaborator who couldn't fulfill his/her promise
-
-2. Integrate Layer 1 governance with Layer 2 collaboration implementation
-- OR side chain: as a collaboration environment, where collaborators can negotiate (not vote) to reach the consensus, call microservice tools to collaborate, and store all the collaboration activities and deliverables onto the time-stamped Wiki for future validation purpose
-- Layer 2 to layer 1: the state change of the OR side chain (Layer 2) will call Meta Staking Contract (Layer 1) to allocate incentives (tasks accomplished) or pull back the staking for Arbitration (disputes arose)
-
-3. Microservices Integration
-- Extending the smart contracts
-- Fast deployment
-- High scalability
-
-# Metis Layer 2 Construct
-- Based on Optimistic Rollups
-- Specialized in Collaboration
-- L1 <> L2 communication
-- Permissioned Network
-- Security and Privacy
-
-# Metis Optimistic Rollup Roadmap
-Milestone 1: Metis Token deposit/withdraw, permissioned aggregator access and fraud penalty adjustment
-- L1 Metis Token bridge contract
-- OVM tweak for Metis Token deposit
-- Integrate L1 bridge contract with the aggregator node 
-- L1 permission contract 
-- Integrate permissions with aggregator node
-- OVM tweak for Metis Token withdraw
-- L2 token management contract, supporting Metis Token only
-- Add value limit to the OVM transactions. Aggregator will only accept transactions within its bond limit
-
-Milestone 2: Multi token deposit/withdraw support
-- Metis bridge contract to support multiple tokens
-- OVM tweak for multi token deposit/withdraw
-- L2 token management contract supports multiple tokens
-
-Milestone 3: the most scalable, accessible and secure collaborate platform
-- Separate storage for confidential data
-- Extra layer of encryption on confidential data
-- Data scrambler for confidential data.
-
+1.The standard layer 2 design is usually very centralized. Many of these constructs duplicate a centralized structure from a single sequencer, which relies on the verification mechanism to deter malicious players from fraudulent behaviors. This design leads to the second problem.
+2.It usually takes a long time to finalize a transaction. Especially when there is a need to withdraw from the layer 2 construct to layer 1. The time to finalize the transaction can take many days.
+3.This, in turn, will cause a bottleneck on layer 2 again. Because of the way many layer 2 solutions are constructed, the throughput on Layer 2 will eventually be limited by the centralized stack's power. If the goal is to bring DApps to the mainstream, we must allow the layer 2 solutions to scale.
+ 
+ 
+From the technical perspective, we hope to address the problem via below R&D and optimization of Optimistic Rollup.
+1.Supporting multiple virtual machines running to avoid the throughput bottleneck.
+2.Supporting the microservice framework for easy extension of toolkit, builders can plug/unplug different microservice tools to build their applications.
+3.Leveraging IPFS to protect sensitive data, lower the cost and increase the efficiency. 
+4.L2 rangers to shorten the fraud-proof window required.
+5.We think Web3 is a whole economy, so every DAC should have its own business sustainability. That’s why we support DApps/communities to launch their own tokens, to incentivize the internal economic activities.
+ 
+From the organizational perspective, we define DAO as a collective of individuals to achieve goals, so how to build up trust, and how to manage decentralized collaborations in decentralized environments where no prior trust foundation has been built are the key issues to solve. And we introduce Optimistic Governance (OG), aiming to solve the trust issue dwelling among distributed community members. OG leverages staking bonds as the commitment to fulfill the obligations, pulling back the bonds as the penalty for defaults, which will help distrustful collaborators to buildup trust, confirm collaborative relationship, and validate the computation results or deliverables. We also define key elements that form an individual in the Web3 world, which include wallet, reputation power(recorded in NFT), attributes(recorded in NFT), etc.
+ 
+So with the technical and organizational constructs of Metis, we hope to enable individuals/communities to open and run their business on the blockchain, with Optimistic Governance to buildup trust and protect their interest, on-chain tools to implement collaborations, which will open a new space for the general public to adopt blockchain. And fundamentally, to enable Ethereum to become the infrastructure of supporting value creation (collaborations), while not just payment.
