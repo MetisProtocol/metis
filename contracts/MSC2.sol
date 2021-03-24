@@ -144,7 +144,7 @@ contract MSC2 is IMSC {
         require(_token.balanceOf(address(this)) >= p.value, "INSUFFICIENT_BALANCE");
         
         p.status = ParticipantStatus.Closed;
-        require(_token.transferFrom(msg.sender,p.value, "Withdraw"), "token withdraw failed");
+        require(_token.transferFrom(address(this), msg.sender,p.value), "token withdraw failed");
 
         p.value = 0;
         lastStatusChange = now;
