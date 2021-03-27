@@ -97,12 +97,12 @@ contract MSC2 is IMSC {
      * The sender must authorized this contract to be the operator of senders account before committing
      */
     function commit(uint256 amount) public {
-        emit Transaction (msg.sender, from, address(this), amount, "", "");
+        
         // Only participants are allowed
-        //require(amount > 0, "AMOUNT_NOT_GREATER_THAN_ZERO");
-        //require(_participants.has(msg.sender), "DOES_NOT_HAVE_PARTICIPANT_ROLE");
-        //require(_token.balanceOf(msg.sender) >= amount, "INSUFFICIENT_BALANCE");
-        //require(_token.transferFrom(msg.sender, address(this), amount), "Token transfer failed");
+        require(amount > 0, "AMOUNT_NOT_GREATER_THAN_ZERO");
+        require(_participants.has(msg.sender), "DOES_NOT_HAVE_PARTICIPANT_ROLE");
+        require(_token.balanceOf(msg.sender) >= amount, "INSUFFICIENT_BALANCE");
+        require(_token.transferFrom(msg.sender, address(this), amount), "Token transfer failed");
 
         _commit(msg.sender, amount);
     }
