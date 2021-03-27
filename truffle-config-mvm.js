@@ -18,11 +18,10 @@
  *
  */
 
-const Web3 = require("web3");
-const web3 = new Web3();
 const HDWalletProvider = require('truffle-hdwallet-provider');
 require('dotenv').config();
 const infuraKey = process.env.INFURAKEY;
+const l2url = process.env.LAYER2;
 
 const fs = require('fs');
 const mnemonic = fs.readFileSync(".secret").toString().trim();
@@ -39,6 +38,7 @@ module.exports = {
    *
    * $ truffle test --network <network-name>
    */
+  contracts_build_directory: './build/contracts/mvm',
 
   networks: {
     // Useful for testing. The `development` name is special - truffle uses it by default
@@ -53,11 +53,18 @@ module.exports = {
       network_id: "*",       // Any network (default: none)
       networkCheckTimeout: 1000
      },
+    layer2: {
+      host: l2url,     // Localhost (default: none)
+      port: 8545,            // Standard Ethereum port (default: none)
+      network_id: "*",       // Any network (default: none)
+      networkCheckTimeout: 1000,
+      gasPrice: 0
+     },
 
     main: {
        provider: () => new HDWalletProvider(mnemonic, "https://mainnet.infura.io/v3/" + infuraKey),
        network_id: 1,       // mainnet
-       gasPrice: web3.utils.toWei('115', 'gwei'), 
+       gasPrice: 115000, 
        confirmations: 2,    // # of confs to wait between deployments. (default: 0)
        timeoutBlocks: 1000,  // # of blocks before a deployment times out  (minimum/default: 50)
        networkCheckTimeout: 5000,
@@ -100,15 +107,14 @@ module.exports = {
   // Configure your compilers
   compilers: {
     solc: {
-      // version: "0.5.16",    // Fetch exact version from solc-bin (default: truffle's version)
-      // docker: true,        // Use "0.5.1" you've installed locally with docker (default: false)
-      // settings: {          // See the solidity docs for advice about optimization and evmVersion
-      //  optimizer: {
-      //    enabled: false,
-      //    runs: 200
-      //  },
-      //  evmVersion: "byzantium"
-      // }
+        // Add path to the optimism solc fork
+        version: "node_modules/@eth-optimism/solc",
+        settings: {          // See the solidity docs for advice about optimization and evmVersion
+           optimizer: {
+              enabled: true,
+              runs: 1
+           },
+        }
     }
   },
 }
