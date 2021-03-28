@@ -16,7 +16,7 @@
     "dotenv": "^8.2.0",
     "leftpad": "^0.0.1",
     "oneclick": "^1.0.2",
-    "truffle": "^5.1.40",
+    "truffle": "^5.2.6",
     "truffle-debugger": "^5.0.26",
     "web3": "^1.2.11",
     "web3-eth-contract": "^1.2.11"
