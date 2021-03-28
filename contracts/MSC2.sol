@@ -85,6 +85,7 @@ contract MSC2 is IMSC {
                 }
         }
         lastStatusChange = now;
+	emit Transaction (msg.sender, from, address(this), amount, "", "");
     }
 
     /**
@@ -93,7 +94,7 @@ contract MSC2 is IMSC {
      * The sender must authorized this contract to be the operator of senders account before committing
      */
     function commit(uint256 amount) public {
-
+        
         // Only participants are allowed
         require(amount > 0, "AMOUNT_NOT_GREATER_THAN_ZERO");
         require(_participants.has(msg.sender), "DOES_NOT_HAVE_PARTICIPANT_ROLE");
