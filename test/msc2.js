@@ -38,11 +38,11 @@ contract("MSC Test", async accounts => {
                 await msc.commit(5000, {from: accounts[0]});
 
                 let balance = await token.balanceOf.call(msc.address)
-                //assert.equal(balance, 5000);
+                assert.equal(balance, 5000);
 
-                //let {value, status} = await msc.parties(accounts[0]);
-                //assert.equal(value, 5000, "Account 0 should have pledged 5000");
-                //assert.equal(status, 0, "Account 0 should still in pending");
+                let {value, status} = await msc.parties(accounts[0]);
+                assert.equal(value, 5000, "Account 0 should have pledged 5000");
+                assert.equal(status, 0, "Account 0 should still in pending");
                 let contractStatus = await msc.contractStatus();
                 assert.equal(contractStatus, 0, "Contract should still be pending");
         });
