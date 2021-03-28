@@ -85,7 +85,7 @@ contract MSC2 is IMSC {
                 }
         }
         lastStatusChange = now;
-	emit Transaction (msg.sender, from, address(this), amount, "", "");
+	    emit Transaction (msg.sender, from, address(this), amount, "", "");
     }
 
     /**
