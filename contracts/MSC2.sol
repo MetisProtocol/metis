@@ -99,7 +99,8 @@ contract MSC2 is IMSC {
         require(amount > 0, "AMOUNT_NOT_GREATER_THAN_ZERO");
         require(_participants.has(msg.sender), "DOES_NOT_HAVE_PARTICIPANT_ROLE");
         require(_token.balanceOf(msg.sender) >= amount, "INSUFFICIENT_BALANCE");
-        require(_token.transferFrom(msg.sender, address(this), amount), "Token transfer failed");
+
+        _token.transferFrom(msg.sender, address(this), amount);
 
         _commit(msg.sender, amount);
     }

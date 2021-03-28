@@ -22,6 +22,7 @@ const HDWalletProvider = require('truffle-hdwallet-provider');
 require('dotenv').config();
 const infuraKey = process.env.INFURAKEY;
 const l2url = process.env.LAYER2;
+const l2burl = process.env.LAYER2B;
 
 const fs = require('fs');
 const mnemonic = fs.readFileSync(".secret").toString().trim();
@@ -55,6 +56,13 @@ module.exports = {
      },
     layer2: {
       host: l2url,     // Localhost (default: none)
+      port: 8545,            // Standard Ethereum port (default: none)
+      network_id: "*",       // Any network (default: none)
+      networkCheckTimeout: 1000,
+      gasPrice: 0
+     },
+    layer2b: {
+      host: l2burl,     // Localhost (default: none)
       port: 8545,            // Standard Ethereum port (default: none)
       network_id: "*",       // Any network (default: none)
       networkCheckTimeout: 1000,
