@@ -1,6 +1,6 @@
 pragma solidity >=0.4.22 <0.6.0;
 
-contract TaskList {
+contract TaskList2 {
     
     
     enum STATUS {NONE, OPEN, EXECUTING, REVIEW, REJECT, DONE}

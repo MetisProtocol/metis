@@ -44,7 +44,7 @@ contract("MSC Test", async accounts => {
                 assert.equal(value, 5000, "Account 0 should have pledged 5000");
                 assert.equal(status, 0, "Account 0 should still in pending");
                 let contractStatus = await msc.contractStatus();
-                assert.equal(contractStatus, 0, "Contract should still be pending");
+                assert.equal(contractStatus, 1, "Contract should still be in progress");
         });
 
 
