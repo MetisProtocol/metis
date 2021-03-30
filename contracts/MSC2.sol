@@ -7,7 +7,7 @@ import "./IMSC.sol";
 /**
  * @dev implementation of MSC
  */
-contract MSC2 is IMSC {
+contract MSC2 {
     using Roles for Roles.Role;
     enum ContractStatus { Pending, Effective, Completed, Dispute, Requested, Closed }
     enum ParticipantStatus { Pending,Committed, Wantout, Completed, Dispute, Closed }
@@ -112,6 +112,7 @@ contract MSC2 is IMSC {
      * The sender must have enough fund pledged. The method does not trigger status changes.
      * The transaction is not allowed if the contract is in the middle of a dispute.
      */
+     
     function send(address to, uint256 amount) public {
 
         Pledge storage p = parties[msg.sender];
@@ -126,7 +127,7 @@ contract MSC2 is IMSC {
         
         p.value -= amount;
         targetP.value += amount;
-        emit Transaction(msg.sender, msg.sender, to, amount, "", "Transfer");
+        //emit Transaction(msg.sender, msg.sender, to, amount, "", "");
     }
 
     /**
@@ -153,6 +154,7 @@ contract MSC2 is IMSC {
         }
     }
    
+   
     /**
      * @dev signal a participant wants to exit
      * once an exit is signaled, the contract will wait pledgePeriod * 1 days for other participants to react
@@ -161,6 +163,7 @@ contract MSC2 is IMSC {
      * if no dispute is resolved after the pledge period expires, the contract will automatically set to complete
      * and open to withdraws.
      */
+     
     function iwantout() public {
         Pledge storage p = parties[msg.sender];
         // Only participants are allowed
@@ -171,22 +174,24 @@ contract MSC2 is IMSC {
         if (p.status != ParticipantStatus.Wantout) {
                 p.status = ParticipantStatus.Wantout;
                 numWantedout++;
-                lastStatusChange = now;
+                //lastStatusChange = now;
         }
         if (numWantedout == participantsArray.length) {
                 contractStatus = ContractStatus.Completed;
-                emit ContractClose(msg.sender, lastStatusChange, numWantedout, "All Agreed");
+                 emit ContractClose(msg.sender, lastStatusChange, numWantedout, "All Agreed");
         } else if (now >= lastStatusChange + disputePeriod * 1 days && contractStatus != ContractStatus.Dispute) {
                 contractStatus = ContractStatus.Completed;
-                emit ContractClose(msg.sender, lastStatusChange, numWantedout, "Dispute Expired");
+                 emit ContractClose(msg.sender, lastStatusChange, numWantedout, "Dispute Expired");
         }
     }
+   
 
     /** 
      * @dev raise a dispute
      * only one participant can raise the dispute. it will put the contract status to dispute, blocking all
      * further transactions.
      */
+     
     function dispute() public {
         Pledge storage p = parties[msg.sender];
         // Only participants are allowed
@@ -208,6 +213,7 @@ contract MSC2 is IMSC {
      * @dev cancel a dispute
      * the method also reset the status change. the original dispute period continues.
      */
+    
     function withdrawDispute() public {
         Pledge storage p = parties[msg.sender];
         // Only participants are allowed
@@ -218,7 +224,7 @@ contract MSC2 is IMSC {
         
         p.status = ParticipantStatus.Committed;
         contractStatus = ContractStatus.Effective;
-        emit ContractDispute(msg.sender, lastStatusChange, "Withdrawn");
+         emit ContractDispute(msg.sender, lastStatusChange, "Withdrawn");
 
         // restore the date so the dispute period continues after the withdraw
         lastStatusChange = now - disputeRollBackDays;
@@ -227,11 +233,12 @@ contract MSC2 is IMSC {
     /** 
      * @dev request a facilitator to resolve the dispute
      */
+    
     function resolutionRequest() public {
         require(_participants.has(msg.sender), "DOES_NOT_HAVE_PARTICIPANT_ROLE");
         require(contractStatus == ContractStatus.Dispute, "STATUS_IS_NOT_DISPUTE");
 
-        emit ResolutionRequested(msg.sender, lastStatusChange);
+         emit ResolutionRequested(msg.sender, lastStatusChange);
         contractStatus = ContractStatus.Requested;
     }
     /** 
