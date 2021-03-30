@@ -113,7 +113,7 @@ contract MSC2 {
      * The transaction is not allowed if the contract is in the middle of a dispute.
      */
      
-    function send(address to, uint256 amount) public {
+    function give(address to, uint256 amount) public {
 
         Pledge storage p = parties[msg.sender];
         Pledge storage targetP = parties[to];
