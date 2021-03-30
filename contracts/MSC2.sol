@@ -13,6 +13,7 @@ contract MSC2 {
     enum ParticipantStatus { Pending,Committed, Wantout, Completed, Dispute, Closed }
 
     event Transaction (address operator, address from, address to, uint256 amount, bytes msg1, bytes msg2);
+    event Give (address from, address to, uint256 amount);
     event ContractClose(address initiator, uint lastStatusChange, uint numWantedout, bytes msg);
     event ContractDispute(address operator, uint lastStatusChange, bytes msg);
     event ResolutionRequested(address initiator, uint lastStatusChange);
@@ -85,7 +86,7 @@ contract MSC2 {
                 }
         }
         lastStatusChange = now;
-	    emit Transaction (msg.sender, from, address(this), amount, "", "");
+	    //emit Transaction (msg.sender, from, address(this), amount, "", "");
     }
 
     /**
@@ -127,7 +128,7 @@ contract MSC2 {
         
         p.value -= amount;
         targetP.value += amount;
-        //emit Transaction(msg.sender, msg.sender, to, amount, "", "");
+        emit Give(msg.sender, to, amount);
     }
 
     /**
