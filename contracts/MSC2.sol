@@ -97,7 +97,7 @@ contract MSC2 {
     function commit(uint256 amount) public {
         
         // Only participants are allowed
-        require(amount > 0, "AMOUNT_NOT_GREATER_THAN_ZERO");
+        //require(amount > 0, "AMOUNT_NOT_GREATER_THAN_ZERO");
         require(_participants.has(msg.sender), "DOES_NOT_HAVE_PARTICIPANT_ROLE");
         require(_token.balanceOf(msg.sender) >= amount, "INSUFFICIENT_BALANCE");
 
