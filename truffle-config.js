@@ -28,7 +28,7 @@ const fs = require('fs');
 const mnemonic = fs.readFileSync(".secret").toString().trim();
 const gasapi = "https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=YourApiKeyToken";
 
-const LedgerWalletProvider = require('@umaprotocol/truffle-ledger-provider');
+//const LedgerWalletProvider = require('@umaprotocol/truffle-ledger-provider');
  
 const ledgerOptions = {
       networkId: 1, // mainnet
