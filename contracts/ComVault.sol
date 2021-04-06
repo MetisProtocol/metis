@@ -39,16 +39,16 @@ contract ComVault is Ownable {
     }
 
     function withdrawFund(address target) external onlyOwner {
-        token_.transfer(target, token_.balanceOf(address(this)));
+        require(token_.transfer(target, token_.balanceOf(address(this))), "Withdraw failed");
     }
 
     function fund(address target, uint256 amount) external {
         ARRANGEMENT storage a = arrangements_[target];
         require(a.aStatus == STATUS.ARRANGED, "sender not arranged or already funded");
         require(token_.transferFrom(msg.sender, address(this), amount), "token transfer failed");
-        require(amount + a.amount <= a.targetAmount, "token transfer failed");
+        require(amount.add(a.amount) <= a.targetAmount, "token transfer failed");
 
-        a.amount += amount;
+        a.amount = a.amount.add(amount);
         if (a.amount == a.targetAmount) {
            a.aStatus = STATUS.FUNDED;
         }
@@ -56,7 +56,7 @@ contract ComVault is Ownable {
     }
 
     function setTge(uint256 tge) external onlyOwner {
-
+        require(_tge == 0, 'TGE is already set');
         emit TGE(_tge, tge);
         _tge = tge;
     }
@@ -93,13 +93,13 @@ contract ComVault is Ownable {
         uint256 curIndex = (now - _tge) / _interval + 1;
 
         if (curIndex >= 12) {
-            totalAmount = a.metisAmount - a.metisPaid;
+            totalAmount = a.metisAmount.sub(a.metisPaid);
             a.metisPaid = a.metisAmount;
         }else {
            for (uint i = a.claimIndex; i < curIndex; ++i) {
-               totalAmount += a.metisAmount / 12; // unlock 1/12 every 30 days
+               totalAmount = totalAmount.add(a.metisAmount / 12); // unlock 1/12 every 30 days
            }
-           a.metisPaid += totalAmount;
+           a.metisPaid = a.metisPaid.add(totalAmount);
         }
 
         a.claimIndex = curIndex;

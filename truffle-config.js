@@ -18,16 +18,26 @@
  *
  */
 
+const Web3 = require("web3");
+const web3 = new Web3();
 const HDWalletProvider = require('truffle-hdwallet-provider');
 require('dotenv').config();
 const infuraKey = process.env.INFURAKEY;
-const l2url = process.env.LAYER2;
-const l2burl = process.env.LAYER2B;
 
 const fs = require('fs');
 const mnemonic = fs.readFileSync(".secret").toString().trim();
 const gasapi = "https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=YourApiKeyToken";
 
+const LedgerWalletProvider = require('@umaprotocol/truffle-ledger-provider');
+ 
+const ledgerOptions = {
+      networkId: 1, // mainnet
+      path: "44'/60'/0'/0/0", // ledger default derivation path
+      askConfirm: true,
+      accountsLength: 1,
+      accountsOffset: 0
+};
+ 
 
 module.exports = {
   /**
@@ -39,7 +49,6 @@ module.exports = {
    *
    * $ truffle test --network <network-name>
    */
-  contracts_build_directory: './build/contracts/mvm',
 
   networks: {
     // Useful for testing. The `development` name is special - truffle uses it by default
@@ -54,25 +63,11 @@ module.exports = {
       network_id: "*",       // Any network (default: none)
       networkCheckTimeout: 1000
      },
-    layer2: {
-      host: l2url,     // Localhost (default: none)
-      port: 8545,            // Standard Ethereum port (default: none)
-      network_id: "*",       // Any network (default: none)
-      networkCheckTimeout: 1000,
-      gasPrice: 0
-     },
-    layer2b: {
-      host: l2burl,     // Localhost (default: none)
-      port: 8545,            // Standard Ethereum port (default: none)
-      network_id: "*",       // Any network (default: none)
-      networkCheckTimeout: 1000,
-      gasPrice: 0
-     },
 
     main: {
-       provider: () => new HDWalletProvider(mnemonic, "https://mainnet.infura.io/v3/" + infuraKey),
+       provider: () => new LedgerWalletProvider(ledgerOptions, "https://mainnet.infura.io/v3/" + infuraKey),
        network_id: 1,       // mainnet
-       gasPrice: 115000, 
+       gasPrice: web3.utils.toWei('103', 'gwei'), 
        confirmations: 2,    // # of confs to wait between deployments. (default: 0)
        timeoutBlocks: 1000,  // # of blocks before a deployment times out  (minimum/default: 50)
        networkCheckTimeout: 5000,
@@ -91,6 +86,7 @@ module.exports = {
     // Useful for deploying to a public network.
     // NB: It's important to wrap the provider as a function.
     ropsten: {
+//       provider: () => new LedgerWalletProvider(ledgerOptions, "https://ropsten.infura.io/v3/" + infuraKey),
        provider: () => new HDWalletProvider(mnemonic, "https://ropsten.infura.io/v3/" + infuraKey),
        network_id: 3,       // Ropsten's id
        //gas: 5500000,        // Ropsten has a lower block limit than mainnet
@@ -115,14 +111,15 @@ module.exports = {
   // Configure your compilers
   compilers: {
     solc: {
-        // Add path to the optimism solc fork
-        version: "node_modules/@eth-optimism/solc",
-        settings: {          // See the solidity docs for advice about optimization and evmVersion
-           optimizer: {
-              enabled: true,
-              runs: 1
-           },
-        }
+      // version: "0.5.16",    // Fetch exact version from solc-bin (default: truffle's version)
+      // docker: true,        // Use "0.5.1" you've installed locally with docker (default: false)
+      // settings: {          // See the solidity docs for advice about optimization and evmVersion
+      //  optimizer: {
+      //    enabled: false,
+      //    runs: 200
+      //  },
+      //  evmVersion: "byzantium"
+      // }
     }
   },
 }

@@ -4,27 +4,17 @@
   "description": "metis project",
   "main": "index.js",
   "dependencies": {
-    "@eth-optimism/ovm-truffle-provider-wrapper": "0.0.1-alpha.27",
-    "@eth-optimism/rollup-full-node": "0.0.1-alpha.29",
     "@eth-optimism/solc": "0.5.16-alpha.7",
-    "@openzeppelin/contract-loader": "^0.6.1",
     "@openzeppelin/contracts": "^2.5.1",
-    "@uniswap/v2-core": "^1.0.1",
-    "@uniswap/v2-periphery": "^1.1.0-beta.0",
+    "@umaprotocol/truffle-ledger-provider": "^1.0.5",
     "bignumber": "^1.1.0",
     "csv-parser": "^3.0.0",
     "dotenv": "^8.2.0",
-    "leftpad": "^0.0.1",
-    "oneclick": "^1.0.2",
-    "truffle": "^5.2.6",
-    "truffle-debugger": "^5.0.26",
+    "regenerator-runtime": "^0.13.7",
     "web3": "^1.2.11",
     "web3-eth-contract": "^1.2.11"
   },
   "devDependencies": {
-    "@openzeppelin/cli": "^2.8.2",
-    "@openzeppelin/test-helpers": "^0.5.6",
-    "ganache-cli": "^6.10.1",
     "truffle-hdwallet-provider": "^1.0.17"
   },
   "scripts": {

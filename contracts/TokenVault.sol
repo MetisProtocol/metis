@@ -12,8 +12,6 @@ contract TokenVault is Ownable {
     event NEW(address target, uint index, uint256 amount, uint256 timestamp);
     event DATED(address target, uint index, uint256 timestamp);
     event CLAIM(address operator, uint256 amount);
-    event TGE(uint256 timestamp, uint256 tge);
-    uint256 _tge;
 
     struct ARRANGEMENT{
         uint256 amount;
@@ -31,11 +29,6 @@ contract TokenVault is Ownable {
         token_ = IERC20(token);
     }
 
-    function setTge(uint256 tge) external onlyOwner {
-
-        emit TGE(_tge, tge);
-        _tge = tge;
-    }
     function addNew(address target, uint256 amount, uint256 timestamp) external onlyOwner {
         ARRANGEMENT[] storage alist = arrangements_[target];
         ARRANGEMENT memory a;
@@ -106,7 +99,7 @@ contract TokenVault is Ownable {
             }
             else if (now >= a[i].timestamp) {
                 a[i].aStatus = STATUS.PAID;
-                totalAmount += a[i].amount;
+                totalAmount.add(a[i].amount);
             }
         }
         require(token_.transfer(msg.sender, totalAmount), "TRANSFER_FAILED");
