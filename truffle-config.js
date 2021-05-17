@@ -28,7 +28,7 @@ const fs = require('fs');
 const mnemonic = fs.readFileSync(".secret").toString().trim();
 const gasapi = "https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=YourApiKeyToken";
 
-//const LedgerWalletProvider = require('@umaprotocol/truffle-ledger-provider');
+const LedgerWalletProvider = require('@umaprotocol/truffle-ledger-provider');
  
 const ledgerOptions = {
       networkId: 1, // mainnet
@@ -67,7 +67,7 @@ module.exports = {
     main: {
        provider: () => new LedgerWalletProvider(ledgerOptions, "https://mainnet.infura.io/v3/" + infuraKey),
        network_id: 1,       // mainnet
-       gasPrice: web3.utils.toWei('103', 'gwei'), 
+       gasPrice: web3.utils.toWei('250', 'gwei'), 
        confirmations: 2,    // # of confs to wait between deployments. (default: 0)
        timeoutBlocks: 1000,  // # of blocks before a deployment times out  (minimum/default: 50)
        networkCheckTimeout: 5000,
@@ -111,15 +111,15 @@ module.exports = {
   // Configure your compilers
   compilers: {
     solc: {
-      // version: "0.5.16",    // Fetch exact version from solc-bin (default: truffle's version)
+       version: "0.5.16",    // Fetch exact version from solc-bin (default: truffle's version)
       // docker: true,        // Use "0.5.1" you've installed locally with docker (default: false)
-      // settings: {          // See the solidity docs for advice about optimization and evmVersion
-      //  optimizer: {
-      //    enabled: false,
-      //    runs: 200
-      //  },
+       settings: {          // See the solidity docs for advice about optimization and evmVersion
+        optimizer: {
+          enabled: true,
+          runs: 200
+        },
       //  evmVersion: "byzantium"
-      // }
+       }
     }
   },
 }

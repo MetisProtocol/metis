@@ -108,7 +108,7 @@ module.exports = {
   compilers: {
     solc: {
         // Add path to the optimism solc fork
-        version: "node_modules/@eth-optimism/solc",
+        version: "node_modules/@metis.io/solc",
         settings: {          // See the solidity docs for advice about optimization and evmVersion
            optimizer: {
               enabled: true,

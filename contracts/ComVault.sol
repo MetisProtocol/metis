@@ -3,19 +3,18 @@ pragma solidity ^0.5.0;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/ownership/Ownable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "./MathHelper.sol";
 
 contract ComVault is Ownable {
-
-    IERC20 token_;
     IERC20 _metisToken;
     using SafeMath for uint256;
     enum STATUS {undefined, ARRANGED, FUNDED}
     event NEW(address target, uint256 amount, uint256 metisAmount);
-    event FUND(address target, uint256 amount, uint256 timestamp);
     event CLAIM(address operator, uint256 amount);
     event TGE(uint256 timestamp, uint256 tge);
     uint256 _tge;
     uint256 _interval;
+    address _tokenaddr;
 
     struct ARRANGEMENT{
         uint256 amount;
@@ -28,43 +27,26 @@ contract ComVault is Ownable {
     mapping(address=>ARRANGEMENT) public arrangements_;
 
     constructor(
-        address token,
         address metisToken
     )
     public
     {
-        token_ = IERC20(token);
         _metisToken = IERC20(metisToken);
         _interval = 30 days;
-    }
-
-    function withdrawFund(address target) external onlyOwner {
-        require(token_.transfer(target, token_.balanceOf(address(this))), "Withdraw failed");
-    }
-
-    function fund(address target, uint256 amount) external {
-        ARRANGEMENT storage a = arrangements_[target];
-        require(a.aStatus == STATUS.ARRANGED, "sender not arranged or already funded");
-        require(token_.transferFrom(msg.sender, address(this), amount), "token transfer failed");
-        require(amount.add(a.amount) <= a.targetAmount, "token transfer failed");
-
-        a.amount = a.amount.add(amount);
-        if (a.amount == a.targetAmount) {
-           a.aStatus = STATUS.FUNDED;
-        }
-        emit FUND(msg.sender, amount, now);
+        _tokenaddr = metisToken;
     }
 
     function setTge(uint256 tge) external onlyOwner {
-        require(_tge == 0, 'TGE is already set');
+        //require(_tge == 0, 'TGE is already set');
         emit TGE(_tge, tge);
         _tge = tge;
     }
     function _add(address target, uint256 targetamount, uint256 metisAmount) internal {
         ARRANGEMENT storage a = arrangements_[target];
-        require (a.aStatus == STATUS.undefined, "target already arranged");
+        //require (a.aStatus == STATUS.undefined, "target already arranged");
         a.targetAmount = targetamount;
-        a.aStatus = STATUS.ARRANGED;
+        a.aStatus = STATUS.FUNDED;
+        a.amount = targetamount;
         a.metisAmount = metisAmount;
         emit NEW(target, targetamount, metisAmount);
     }
@@ -83,6 +65,7 @@ contract ComVault is Ownable {
 
     function claim() external {
         require(_tge > 0, "TGE not set");
+        require(now >= _tge, "TGE has not arrived yet");
 
         ARRANGEMENT storage a = arrangements_[msg.sender];
 
@@ -90,21 +73,24 @@ contract ComVault is Ownable {
         require(a.metisPaid < a.metisAmount, "all paid");
 
         uint256 totalAmount = 0;
-        uint256 curIndex = (now - _tge) / _interval + 1;
+        uint256 curIndex = (now - _tge) / _interval ;
 
-        if (curIndex >= 12) {
-            totalAmount = a.metisAmount.sub(a.metisPaid);
-            a.metisPaid = a.metisAmount;
-        }else {
-           for (uint i = a.claimIndex; i < curIndex; ++i) {
-               totalAmount = totalAmount.add(a.metisAmount / 12); // unlock 1/12 every 30 days
-           }
-           a.metisPaid = a.metisPaid.add(totalAmount);
+        if (a.claimIndex == 0 && a.metisPaid == 0) {
+            //first time, after TGE unlock 10%
+            totalAmount = totalAmount.add(MathHelper.mulDiv(a.metisAmount, 1, 10));
         }
 
+        if (curIndex > 12) {
+           totalAmount = a.metisAmount.sub(a.metisPaid);
+        } else if (curIndex > a.claimIndex ) {
+           totalAmount = totalAmount.add(MathHelper.mulDiv(MathHelper.mulDiv(a.metisAmount, 9, 10), curIndex - a.claimIndex , 12));
+        }
+        a.metisPaid = a.metisPaid.add(totalAmount);
         a.claimIndex = curIndex;
 
+        //require(totalAmount > 0, "Nothing to claim");
         require(_metisToken.transfer(msg.sender, totalAmount), "TRANSFER_FAILED");
+
         emit CLAIM(msg.sender, totalAmount);
     }
 }
