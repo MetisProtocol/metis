@@ -96,41 +96,4 @@ contract MultiSigMinter is Ownable {
         }
     }
 
-    function proposeBurn(address target, uint256 amount) external {
-        // Only minters can mint
-        require(_minters.has(msg.sender), "DOES_NOT_HAVE_MINTER_ROLE");
-        Proposal memory p;
-        p.target = target;
-        p.amount = amount;
-        p.ptype = ProposalType.BURN;
-        proposals.push(p);
-        emit ProposalEvent(msg.sender, proposals.length - 1, "New Burn Proposal");
-    }
-
-    function signBurn(uint256 pos) external {
-        // Only minters can mint
-        require(_minters.has(msg.sender), "DOES_NOT_HAVE_MINTER_ROLE");
-        require(pos < proposals.length, "INVALID_PROPOSAL");
-
-        Proposal storage p = proposals[pos];
-        require(p.ptype == ProposalType.BURN, "WRONG_TYPE");
-        require(p.finish == false, "BURNED");
-
-        p.approvals[msg.sender] = true;
-        emit ProposalEvent(msg.sender, pos, "Sign");
-
-        uint256 i;
-        for (i = 0; i < minters_.length; ++i) {
-            if (minters_[i] == address(0)) {
-                continue;
-            }
-	       if (p.approvals[minters_[i]] == false) {
-              break;
-           }
-        }
-        if (i == minters_.length) {
-            p.finish = true;
-	        token_.burn(p.target, p.amount);
-        }
-    }
 }
