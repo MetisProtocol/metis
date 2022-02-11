@@ -6,7 +6,7 @@
   "dependencies": {
     "@eth-optimism/solc": "0.5.16-alpha.7",
     "@metis.io/solc": "^0.6.12-alpha.2",
-    "@openzeppelin/contracts": "^2.5.1",
+    "@openzeppelin/contracts": "^4.4.2",
     "@openzeppelin/test-helpers": "^0.5.10",
     "@umaprotocol/truffle-ledger-provider": "^1.0.5",
     "bignumber": "^1.1.0",
