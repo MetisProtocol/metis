@@ -1,9 +1,8 @@
 {
-    "name": "Netswap Top 100 Tokens",
-    "logoURI": "https://raw.githubusercontent.com/Netswap/tokens/master/assets/0x90fe084f877c65e1b577c7b2ea64b8d8dd1ab278/logo.png",
+    "name": "Metis Top Tokens",
+    "logoURI": "https://raw.githubusercontent.com/Netswap/tokens/master/assets/0xdeaddeaddeaddeaddeaddeaddeaddeaddead0000/logo.png",
     "keywords": [
         "metis",
-        "netswap",
         "ethereum",
         "andromeda"
     ],
