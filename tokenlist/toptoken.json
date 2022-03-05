@@ -1,0 +1,170 @@
+{
+    "name": "Netswap Top 100 Tokens",
+    "logoURI": "https://raw.githubusercontent.com/Netswap/tokens/master/assets/0x90fe084f877c65e1b577c7b2ea64b8d8dd1ab278/logo.png",
+    "keywords": [
+        "metis",
+        "netswap",
+        "ethereum",
+        "andromeda"
+    ],
+    "version": {
+        "major": 7,
+        "minor": 0,
+        "patch": 0
+    },
+    "tokens": [
+        {
+            "chainId": 1088,
+            "address": "0xea32a96608495e54156ae48931a7c20f0dcc1a21",
+            "decimals": 6,
+            "name": "USDC Token",
+            "symbol": "m.USDC",
+            "logoURI": "https://raw.githubusercontent.com/MetisProtocol/metis-bridge-resources/master/tokens/USDC/logo.png"
+        },
+        {
+            "chainId": 1088,
+            "address": "0xbb06dca3ae6887fabf931640f67cab3e3a16f4dc",
+            "decimals": 6,
+            "name": "USDT Token",
+            "symbol": "m.USDT",
+            "logoURI": "https://raw.githubusercontent.com/MetisProtocol/metis-bridge-resources/master/tokens/USDT/logo.png"
+        },
+        {
+            "chainId": 1088,
+            "address": "0x5ce34d9abe4bf239cbc08b89287c87f4cd6d80b7",
+            "decimals": 18,
+            "name": "WOW Token",
+            "symbol": "m.WOW",
+            "logoURI": "https://raw.githubusercontent.com/MetisProtocol/metis-bridge-resources/master/tokens/WOW/logo.png"
+        },
+        {
+            "chainId": 1088,
+            "address": "0xf5f66d5daa89c090a7afa10e6c1553b2887a9a33",
+            "decimals": 18,
+            "name": "LINK Token",
+            "symbol": "m.LINK",
+            "logoURI": "https://raw.githubusercontent.com/MetisProtocol/metis-bridge-resources/master/tokens/LINK/logo.png"
+        },
+        {
+            "chainId": 1088,
+            "address": "0x420000000000000000000000000000000000000a",
+            "decimals": 18,
+            "name": "Ether",
+            "symbol": "WETH",
+            "logoURI": "https://raw.githubusercontent.com/MetisProtocol/metis-bridge-resources/master/tokens/ETH/logo.png"
+        },
+        {
+            "chainId": 1088,
+            "address": "0x68D97B7A961a5239B9F911DA8dEb57F6eF6e5e28",
+            "decimals": 18,
+            "name": "AAVE Token",
+            "symbol": "AAVE",
+            "logoURI": "https://raw.githubusercontent.com/MetisProtocol/metis-bridge-resources/master/tokens/AAVE/logo.png"
+        },
+        {
+            "chainId": 1088,
+            "address": "0x87DD4a7Ad23B95cD9fF9C26B5cF325905CaF8663",
+            "decimals": 18,
+            "name": "Curve DAO Token",
+            "symbol": "CRV",
+            "logoURI": "https://raw.githubusercontent.com/MetisProtocol/metis-bridge-resources/master/tokens/CRV/logo.png"
+        },
+        {
+            "chainId": 1088,
+            "address": "0x90fE084F877C65e1b577c7b2eA64B8D8dd1AB278",
+            "decimals": 18,
+            "name": "Netswap Token",
+            "symbol": "NETT",
+            "logoURI": "https://raw.githubusercontent.com/Netswap/tokens/master/assets/0x90fe084f877c65e1b577c7b2ea64b8d8dd1ab278/logo.png"
+        },
+        {
+            "chainId": 1088,
+            "address": "0x445ea60f4ace3d8794369379e68fa0f76af06b02",
+            "decimals": 18,
+            "name": "Poly-Peg CAKE",
+            "symbol": "CAKE",
+            "logoURI": "https://raw.githubusercontent.com/Netswap/tokens/master/assets/0x445ea60f4ace3d8794369379e68fa0f76af06b02/logo.png"
+        },
+        {
+            "chainId": 1088,
+            "address": "0x2692be44a6e38b698731fddf417d060f0d20a0cb",
+            "decimals": 18,
+            "name": "Poly-Peg BNB",
+            "symbol": "BNB",
+            "logoURI": "https://raw.githubusercontent.com/Netswap/tokens/master/assets/0x2692be44a6e38b698731fddf417d060f0d20a0cb/logo.png"
+        },
+        {
+            "chainId": 1088,
+            "address": "0x12d84f1cfe870ca9c9df9785f8954341d7fbb249",
+            "decimals": 18,
+            "name": "Poly-Peg BUSD",
+            "symbol": "BUSD",
+            "logoURI": "https://raw.githubusercontent.com/Netswap/tokens/master/assets/0x12d84f1cfe870ca9c9df9785f8954341d7fbb249/logo.png"
+        },
+        {
+            "chainId": 1088,
+            "address": "0xe253e0cea0cdd43d9628567d097052b33f98d611",
+            "decimals": 18,
+            "name": "Avalanche Token",
+            "symbol": "rAVAX",
+            "logoURI": "https://raw.githubusercontent.com/Netswap/tokens/master/assets/0xe253e0cea0cdd43d9628567d097052b33f98d611/logo.png"
+        },
+        {
+            "chainId": 1088,
+            "address": "0x729de3792a5f810a2e7d7899da74de0d108e7e6b",
+            "decimals": 18,
+            "name": "Wrapped ONE",
+            "symbol": "WONE",
+            "logoURI": "https://raw.githubusercontent.com/Netswap/tokens/master/assets/0x729de3792a5f810a2e7d7899da74de0d108e7e6b/logo.png"
+        },
+        {
+            "chainId": 1088,
+            "address": "0xa9109271abcf0c4106ab7366b4edb34405947eed",
+            "decimals": 18,
+            "name": "Fantom Token",
+            "symbol": "rFTM",
+            "logoURI": "https://raw.githubusercontent.com/Netswap/tokens/master/assets/0xa9109271abcf0c4106ab7366b4edb34405947eed/logo.png"
+        },
+        {
+            "chainId": 1088,
+            "address": "0xfe282Af5f9eB59C30A3f78789EEfFA704188bdD4",
+            "decimals": 18,
+            "name": "Relay Token",
+            "symbol": "RELAY",
+            "logoURI": "https://raw.githubusercontent.com/Netswap/tokens/master/assets/0xfe282af5f9eb59c30a3f78789eeffa704188bdd4/logo.png"
+        },
+        {
+            "chainId": 1088,
+            "address": "0x4b9d2923d875edf43980bf5ddddede3fb20fc742",
+            "decimals": 18,
+            "name": "Matic Token",
+            "symbol": "MATIC",
+            "logoURI": "https://raw.githubusercontent.com/Netswap/tokens/master/assets/0x4b9d2923d875edf43980bf5ddddede3fb20fc742/logo.png"
+        },
+        {
+            "chainId": 1088,
+            "address": "0xE9Aa15a067b010a4078909baDE54F0C6aBcBB852",
+            "decimals": 18,
+            "name": "Metauce",
+            "symbol": "MINES",
+            "logoURI": "https://raw.githubusercontent.com/Netswap/tokens/master/assets/0xe9aa15a067b010a4078909bade54f0c6abcbb852/logo.png"
+        },
+        {
+            "chainId": 1088,
+            "address": "0xa5B55ab1dAF0F8e1EFc0eB1931a957fd89B918f4",
+            "decimals": 8,
+            "name": "Wrapped BTC",
+            "symbol": "WBTC",
+            "logoURI": "https://raw.githubusercontent.com/Netswap/tokens/master/assets/0xa5b55ab1daf0f8e1efc0eb1931a957fd89b918f4/logo.png"
+        },
+        {
+            "chainId": 1088,
+            "address": "0xDeadDeAddeAddEAddeadDEaDDEAdDeaDDeAD0000",
+            "decimals": 18,
+            "name": "Metis Token",
+            "symbol": "METIS",
+            "logoURI": "https://raw.githubusercontent.com/Netswap/tokens/master/assets/0xdeaddeaddeaddeaddeaddeaddeaddeaddead0000/logo.png"
+        }
+    ],
+    "timestamp": "2022-02-19T15:00:00+00:00"
+}
