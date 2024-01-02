@@ -127,7 +127,7 @@ response
 ```json 
 {
     "tx": "",
-    "status": "IN_PROGRESS FAIED SUCCEED",
+    "status": "IN_PROGRESS FAILED SUCCEED",
     "chainid": "",
     "domain": "",
     "data": [],
@@ -160,6 +160,6 @@ response
 | 20018      | User balance not enough    |  
 | 20019      | Connect to chain rpc error    |  
 | 20020      | Tx is empty   |  
-| 20021      | Transaction not existed    |  
+| 20021      | Transaction does not existed    |  
 | 20022      | Domain abi is empty    |  
 👋
