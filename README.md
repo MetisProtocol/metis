@@ -2,7 +2,7 @@
 
 Metis is a Layer2 protocol, devoting to build up a technical and organizational infrastructure to run Web3 economy. 
  
-With Metis, every individual, community, builders or projects can take the benefits of low gas cost, high scalability, rich functionalities, and easy of use UX/UI, to create their decentralized company (DAC) on the blockchain, launch decentralized applications (DApps), and manage the business operations via the DAC structure in a decentralized way. 
+With Metis, every individual, community, builders or projects can take the benefits of low gas cost, high scalability, rich functionalities, and ease of use UX/UI, to create their decentralized company (DAC) on the blockchain, launch decentralized applications (DApps), and manage the business operations via the DAC structure in a decentralized way. 
  
 To achieve sophisticated collaborative outcomes and successfully deploy a framework that involves many on-chain operations requiring timely responses, a layer 2 solution is needed for Metis to achieve its mission. 
  
